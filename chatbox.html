@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="author" content="Edmund Do">
+        <title>ChatBox</title>
+        <link rel="stylesheet" type="text/css" href="stylesheet.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="cjquery_script.js"></script>
+        <script src="cfunc_script.js"></script>
+    </head>
+    <body>
+        <div id="left-bar">
+            <div id="chat-manager" class="left-bar-item">
+                <div id="chat-manager-search" class="chat-manager-item">
+                    <input type="text" placeholder="Search...">
+                </div>
+                <div id="chat-manager-options" class="chat-manager-item">
+                    <input type="image" src="http://placehold.it/20x20">    <!-- Add contact -->
+                    <input type="image" src="http://placehold.it/20x20">    <!-- Set Status -->
+                </div>
+            </div>
+            <div id="chats" class="left-bar-item">
+                <!--
+                Sample chat message
+-->
+                <div class="chat">
+                    <div class="avatar">
+                        <img src="http://placehold.it/50x50">
+                    </div>
+                    <div class="chat-pane">
+                        <div class="chat-pane-info">
+                            <p class="chat-pane-name">MyName</p>
+                            <div class="chat-pane-options">
+                                <input type="image" src="http://placehold.it/15x15">      <!-- Pin -->
+                                <input type="image" src="http://placehold.it/15x15">      <!-- Remove -->
+                            </div>
+                        </div>
+                        <div class="chat-pane-preview">
+                            <p class="chat-pane-preview-message">A 30 character message tha...</p>
+                            <p class="chat-pane-preview-date">05/20/17</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat">
+                    <div class="avatar">
+                        <img src="http://placehold.it/50x50">
+                    </div>
+                    <div class="chat-pane">
+                        <div class="chat-pane-info">
+                            <p class="chat-pane-name">MyName</p>
+                            <div class="chat-pane-options">
+                                <img alt="pin" src="http://placehold.it/15x15">
+                                <img alt="delete" src="http://placehold.it/15x15">
+                            </div>
+                        </div>
+                        <div class="chat-pane-preview">
+                            <p class="chat-pane-preview-message">A 20 character message</p>
+                            <p class="chat-pane-preview-date">05/20/17</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat">
+                    <div class="avatar">
+                        <img src="http://placehold.it/50x50">
+                    </div>
+                    <div class="chat-pane">
+                        <div class="chat-pane-info">
+                            <p class="chat-pane-name">MyName</p>
+                            <div class="chat-pane-options">
+                                <img alt="pin" src="http://placehold.it/15x15">
+                                <img alt="delete" src="http://placehold.it/15x15">
+                            </div>
+                        </div>
+                        <div class="chat-pane-preview">
+                            <p class="chat-pane-preview-message">A 20 character me...</p>
+                            <p class="chat-pane-preview-date">05/20/17</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <div id="main">
+            <div id="info-bar">
+                <div id="selected-user">
+                    <p id="selected-user-username">MyName</p>
+                    <img alt="active" src="http://placehold.it/15x15">
+                </div>
+                <div id="user-options">
+                    <input type="image" src="http://www.ironplanet.com/images/icons/gearicon_inactive.png">
+                    <ul>
+                        <li class="menu-item">Profile</li>
+                        <li class="menu-break"><hr></li>
+                        <li class="menu-item">Logout</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Remains hidden when chat selected -->
+<!--
+            <div id="chat-placeholder">
+                <img alt="chatbox" src="placehold.it/200x200">
+                <p class="placeholder-text">Select a conversation...</p>
+            </div>
+-->
+            
+            <div id="chatbox">
+                <div id="conversations">
+                    <div class="message">
+                        <div class="receiver">
+                            <div class="receiver-body">
+                                <p class="message-content receiver-body-content">This is your message...</p>
+                            </div>
+                            <p class="time">5/26/2017 9:56pm</p>
+                        </div>
+                    </div>
+                    <div class="message">
+                        <div class="sender">
+                            <div class="sender-body">
+                                <p class="message-content sender-body-content">This is my message... here it is yo dawg yay go yashow</p>
+                            </div>
+                            <p class="time">5/26/2017 10:05pm</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="message-box">
+                    <textarea id="pending-message" placeholder="Send a message..."></textarea>
+                    <button id="send">Send</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
