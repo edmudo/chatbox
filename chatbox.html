@@ -127,7 +127,12 @@
                     </div>
                 </div>
                 <div id="message-box">
-                    <textarea id="pending-message" placeholder="Send a message..."></textarea>
+                    <textarea id="pending-message" placeholder="Send a message..." onkeyup="autoAdjustTextBox()"></textarea>
+                    <script>
+                        var messageBox = document.getElementById("pending-message");
+                        var charHeight = messageBox.scrollHeight - 10;  // -10 to account for padding
+                        messageBox.style.height = charHeight.toString() + "px";
+                    </script>
                     <button id="send">Send</button>
                 </div>
             </div>

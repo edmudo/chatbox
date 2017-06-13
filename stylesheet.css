@@ -241,5 +241,10 @@ body {
 #pending-message {
     display: inline-block;
     resize: none;
+    font-size: 14px;
+    max-height: 61px;
+    height: 1px;
+    width: 400px;
     padding: 5px;
+    overflow: hidden;
 }
