@@ -1,0 +1,54 @@
+var fs = require("fs");
+var mysql = require("mysql");
+
+module.exports = Database;
+
+function Database(credPath) {
+    this.creds = JSON.parse(fs.readFileSync(credPath));
+    this.pool = mysql.createPool({
+        connectionLimit: 100,
+        host: this.creds.host,
+        user: this.creds.user,
+        password: this.creds.password,
+        database: this.creds.database,
+        debug: false
+    });
+}
+
+Database.prototype.select = function(q, values, cb) {
+    this.pool.getConnection(function(err, conn) {
+        if(err)
+            return false;
+
+        conn.query(q, values, function(err, rows) {
+            conn.release();
+
+            if(err)
+                return false;
+            else
+                return JSON.stringify(rows);
+        });
+    });
+    cb();
+};
+
+Database.prototype.update = function(q, values, cb) {
+    this.pool.getConnection(function(err, conn) {
+        if(err)
+            return;
+
+        conn.query(q, values, function(err, rows) {
+            conn.release();
+
+            if(err)
+                return;
+
+            isSuccess = true;
+        });
+    });
+    cb();
+};
+
+function cleanQuery(q) {
+
+}
