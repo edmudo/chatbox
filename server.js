@@ -1,50 +1,74 @@
+const SERVER_PORT = 63342;
+
 var http = require("http");
 var fs = require("fs");
 var url = require("url");
-
-var route = {
-    getPaths: {},
-    postPaths: {},
-    get: function(path, cb) {
-        if(typeof route.getPaths[path] === 'undefined') {
-            route.getPaths[path] = cb;
-            console.log("Created");
-        } else {
-            console.log("not created");
-        }
-    },
-    post: function(path, cb) {
-        if(typeof route.postPaths[path] === "undefined") {
-            route.postPaths[path] = cb;
-        }
-    }
-};
+var qs = require("querystring");
 
 var Database = require("./Database");
+var Route = require("./Route");
+
 var connection = new Database("./lib/creds.json");
+var route = new Route();
 
-route.get("/send", function(req, res) {
-    var data = url.parse(req.url, true).query;
+route.register("/send", function(req, res) {
+    let data = req.data;
+    let query = "INSERT INTO messages (sender_id, receiver_id, message, date_sent) VALUES (?, ?, ?, NOW())";
 
-    var query = "INSERT INTO messages (senderId, receiverId, message, dateSent) VALUES (?, ?, ?, NOW())";
-    connection.update(query, [data.senderId, data.receiverId, data.msg], function() {
-        console.log("updated successfully");
+    connection.update(query, [data.sender_id, data.receiver_id, data.msg], function(statusCode, statusMessage) {
+        res.setHeader("Content-Type", "text/html");
+        res.writeHead(statusCode, statusMessage);
+        res.end();
     });
 });
 
-route.get("/receive", function(req, res) {
+route.register("/pull", function(req, res) {
+    let data = url.parse(req.url, true).query;
+    let query = "SELECT * FROM messages WHERE (sender_id OR receiver_id) = ? ORDER BY date_sent DESC";
+
+    connection.select(query, [data.sender_id], function() {
+        console.log("data retrieved");
+    });
+});
+
+route.register("/update_profile", function(req, res) {
 
 });
 
-http.createServer(function (request, response) {
-    if(request.method.toUpperCase() === "GET") {
-        route.getPaths[url.parse(request.url).pathname](request, response);
-        response.end();
-    }
+route.register("/seen", function(req, res) {
 
-    if(request.method.toUpperCase() === "POST") {
-        route.postPaths[url.parse(request.url).pathname](request, response);
-        response.end();
+});
+
+http.createServer(function (req, res) {
+    // Set response headers
+    res.setHeader("Access-Control-Allow-Origin", "http://localhost:" + SERVER_PORT)
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+
+    let pathHandler = route.pathHandlers[url.parse(req.url).pathname];
+
+    if(typeof pathHandler !== "undefined") {
+        if (req.method.toUpperCase() === "GET") {
+            pathHandler(req, res);
+        } else if (req.method.toUpperCase() === "POST") {
+            let reqData = '';
+
+            req.on("data", function(data) {
+                reqData += data;
+                if(req.data > 4e7) {
+                    res.setHeader("Content-Type", "text/html");
+                    res.writeHead(413, "Payload too large");
+                    res.end();
+                }
+            });
+
+            req.on("end", function (data) {
+                req.data = qs.parse(reqData);
+                pathHandler(req, res);
+            });
+        }
+    } else {
+        res.writeHead(404);
+        res.end();
     }
 }).listen(8080);
 

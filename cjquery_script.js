@@ -22,12 +22,6 @@ $(document).ready(
             }
         });
 
-        if($pendingMessage.style.height >= 61) {
-            $pendingMessage.style.overflow = "scroll";
-        } else {
-            $pendingMessage.style.overflow = "hidden";
-        }
-
         $userOptions.find("input").click(
             function (event) {
                 $userOptionsMenu.toggle();
@@ -47,17 +41,22 @@ $(document).ready(
 );
 
 function sendMessage() {
-
-    var pendingMessage = $("#pending-message").value;
+    var pendingMessage = $("#pending-message").val();
 
     $.ajax(
         {
             method: "POST",
-            url: "http://localhost:8080/",
-            data: {message: pendingMessage}
+            url: "http://localhost:8080/send",
+            xhrFields: {
+                withCredentials: true
+            },
+            data: {sender_id: 1, receiver_id: 2, msg: pendingMessage}
         }
     )
-        .done(function(response) {
-            console.log("Received response");
+        .done(function(data, textStatus, xhr) {
+            console.log(data);
+            console.log(textStatus);
+            console.log(xhr.statusText);
+            console.log("Received response: " + xhr.statusText);
         })
 }
