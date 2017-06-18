@@ -15,6 +15,21 @@ function Database(credPath) {
     });
 }
 
+/**
+ * @callback requestCallback
+ * @param {number} statusCode - http status code
+ * @param {string} statusMessage - a description regarding the success of the task
+ * @param {Object=} data - a JSON object representing the retrieved data
+ */
+
+/**
+ * Select requests for the database
+ *
+ * @param {String} q - the parameterized select query
+ * @param {Array} values - parameters for the query
+ * @param {requestCallback} cb - handles the response
+ */
+
 Database.prototype.select = function(q, values, cb) {
     this.pool.getConnection(function(err, conn) {
         if(err)
@@ -32,21 +47,27 @@ Database.prototype.select = function(q, values, cb) {
     cb();
 };
 
+/**
+ * Update requests for the database
+ *
+ * @param {string} q - the parameterized update query
+ * @param {Array} values - parameters for the query
+ * @param {requestCallback} cb - handles the response
+ */
+
 Database.prototype.update = function(q, values, cb) {
     this.pool.getConnection(function(err, conn) {
         if(err)
-            return;
+            cb(503, "Connection failed.");
 
         conn.query(q, values, function(err, rows) {
             conn.release();
-
             if(err)
-                return;
-
-            isSuccess = true;
+                cb(503, "Message failed. Database error: " + err.message);
+            else
+                cb(200, "Message sent");
         });
     });
-    cb();
 };
 
 function cleanQuery(q) {
