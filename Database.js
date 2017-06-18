@@ -33,18 +33,18 @@ function Database(credPath) {
 Database.prototype.select = function(q, values, cb) {
     this.pool.getConnection(function(err, conn) {
         if(err)
-            return false;
+            cb(503, "Connection failed.");
 
         conn.query(q, values, function(err, rows) {
             conn.release();
+            console.log(rows.length);
 
             if(err)
-                return false;
+                cb(503, "Database error: " + err.message);
             else
-                return JSON.stringify(rows);
+                cb(200, "Results received", rows);
         });
     });
-    cb();
 };
 
 /**
@@ -63,9 +63,9 @@ Database.prototype.update = function(q, values, cb) {
         conn.query(q, values, function(err, rows) {
             conn.release();
             if(err)
-                cb(503, "Message failed. Database error: " + err.message);
+                cb(503, "Database error: " + err.message);
             else
-                cb(200, "Message sent");
+                cb(204, "Message sent");
         });
     });
 };

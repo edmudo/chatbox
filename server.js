@@ -13,25 +13,41 @@ var route = new Route();
 
 route.register("/send", function(req, res) {
     let data = req.data;
-    let query = "INSERT INTO messages (sender_id, receiver_id, message, date_sent) VALUES (?, ?, ?, NOW())";
+    let query = "INSERT INTO messages (thread_id, sender_user_id, message) VALUES (?, ?, ?)";
 
-    connection.update(query, [data.sender_id, data.receiver_id, data.msg], function(statusCode, statusMessage) {
-        res.setHeader("Content-Type", "text/html");
-        res.writeHead(statusCode, statusMessage);
+    connection.update(query, [data.thread_id, data.sender_user_id, data.msg], function(statusCode, statusMessage) {
+        res.writeHead(statusCode, statusMessage, {
+            "Content-Type": "text/html"
+        });
         res.end();
     });
 });
 
 route.register("/pull", function(req, res) {
-    let data = url.parse(req.url, true).query;
-    let query = "SELECT * FROM messages WHERE (sender_id OR receiver_id) = ? ORDER BY date_sent DESC";
+    let data = req.data;
 
-    connection.select(query, [data.sender_id], function() {
-        console.log("data retrieved");
+    let query =
+        "SELECT threads_users.pinned, threads_users.thread_id, messages.message, messages.datetime_sent " +
+        "FROM threads_users " +
+        "LEFT JOIN threads ON threads_users.thread_id = threads.thread_id " +
+        "LEFT JOIN messages ON threads_users.thread_id = messages.thread_id " +
+        "WHERE threads_users.user_id = ? " +
+        "ORDER BY threads_users.pinned DESC, threads_users.thread_id, messages.datetime_sent DESC";
+
+    connection.select(query, [data.user_id], function(statusCode, statusMessage, chatProfile) {
+        console.log(JSON.stringify(chatProfile));
+        res.setHeader("Content-Type", "application/json");
+        res.writeHead(statusCode, statusMessage);
+        res.write(JSON.stringify(chatProfile));
+        res.end();
     });
 });
 
-route.register("/update_profile", function(req, res) {
+route.register("/pull_profile", function(req, res) {
+
+});
+
+route.register("/save_profile", function (req, res) {
 
 });
 
