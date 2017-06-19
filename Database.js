@@ -35,14 +35,14 @@ Database.prototype.select = function(q, values, cb) {
         if(err)
             cb(503, "Connection failed.");
 
-        conn.query(q, values, function(err, rows) {
+        conn.query(q, values, function(err, results) {
             conn.release();
-            console.log(rows.length);
+            console.log(results.length);
 
             if(err)
                 cb(503, "Database error: " + err.message);
             else
-                cb(200, "Results received", rows);
+                cb(200, "Results received", results);
         });
     });
 };
@@ -60,7 +60,7 @@ Database.prototype.update = function(q, values, cb) {
         if(err)
             cb(503, "Connection failed.");
 
-        conn.query(q, values, function(err, rows) {
+        conn.query(q, values, function(err) {
             conn.release();
             if(err)
                 cb(503, "Database error: " + err.message);

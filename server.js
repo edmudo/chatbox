@@ -24,21 +24,54 @@ route.register("/send", function(req, res) {
 });
 
 route.register("/pull", function(req, res) {
-    let data = req.data;
+    let data = url.parse(req.url, true).query;
 
     let query =
-        "SELECT threads_users.pinned, threads_users.thread_id, messages.message, messages.datetime_sent " +
+        "SELECT " +
+            "threads_users.pinned, threads_users.thread_id, " +
+            "messages.sender_user_id, messages.message, messages.datetime_sent, " +
+            "threads_last_update.last_updated " +
         "FROM threads_users " +
         "LEFT JOIN threads ON threads_users.thread_id = threads.thread_id " +
         "LEFT JOIN messages ON threads_users.thread_id = messages.thread_id " +
+        "LEFT JOIN (" +
+            "SELECT threads.thread_id, max(messages.datetime_sent) AS last_updated " +
+            "FROM threads " +
+            "LEFT JOIN messages ON threads.thread_id = messages.thread_id " +
+            "GROUP BY threads.thread_id" +
+        ") AS threads_last_update ON threads_users.thread_id = threads_last_update.thread_id " +
         "WHERE threads_users.user_id = ? " +
-        "ORDER BY threads_users.pinned DESC, threads_users.thread_id, messages.datetime_sent DESC";
+        "ORDER BY " +
+            "threads_users.pinned DESC, threads_last_update.last_updated DESC, threads_users.thread_id, messages.datetime_sent DESC ";
 
-    connection.select(query, [data.user_id], function(statusCode, statusMessage, chatProfile) {
-        console.log(JSON.stringify(chatProfile));
-        res.setHeader("Content-Type", "application/json");
-        res.writeHead(statusCode, statusMessage);
-        res.write(JSON.stringify(chatProfile));
+    connection.select(query, [data.user_id], function(statusCode, statusMessage, results) {
+        // Process results into an easily readable JSON object
+        let threads = {};
+
+        for(let result of results) {
+            let threadId = result.thread_id.toString();
+
+            if(!threads.hasOwnProperty(threadId)) {
+                let threadProperties = {};
+
+                threadProperties.pinned = (result.pinned === 1);
+                threadProperties.thread_messages = [];
+                threads[threadId] = threadProperties;
+            }
+
+            let threadMessage = {
+                "sender_user_id": result.sender_user_id,
+                "message": result.message,
+                "datetime_sent": result.datetime_sent
+            };
+
+            threads[threadId].thread_messages.push(threadMessage);
+        }
+
+        res.writeHead(statusCode, statusMessage, {
+            "Content-Type": "application/json"
+        });
+        res.write(JSON.stringify(threads));
         res.end();
     });
 });
