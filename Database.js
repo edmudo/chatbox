@@ -37,7 +37,6 @@ Database.prototype.select = function(q, values, cb) {
 
         conn.query(q, values, function(err, results) {
             conn.release();
-            console.log(results.length);
 
             if(err)
                 cb(503, "Database error: " + err.message);
