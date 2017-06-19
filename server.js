@@ -45,18 +45,25 @@ route.register("/pull", function(req, res) {
             "threads_users.pinned DESC, threads_last_update.last_updated DESC, threads_users.thread_id, messages.datetime_sent DESC ";
 
     connection.select(query, [data.user_id], function(statusCode, statusMessage, results) {
-        // Process results into an easily readable JSON object
-        let threads = {};
+        // Process results into an organized object
+        let chatProfile = {};
+
+        chatProfile.threads = [];
+        chatProfile.thread_id_indices = {};
 
         for(let result of results) {
-            let threadId = result.thread_id.toString();
+            let threadId = result.thread_id;
+            let strThreadId = threadId.toString();
 
-            if(!threads.hasOwnProperty(threadId)) {
-                let threadProperties = {};
+            if(!chatProfile.thread_id_indices.hasOwnProperty(threadId)) {
+                let thread = {};
 
-                threadProperties.pinned = (result.pinned === 1);
-                threadProperties.thread_messages = [];
-                threads[threadId] = threadProperties;
+                thread.pinned = (result.pinned === 1);
+                thread.thread_id = threadId;
+                thread.thread_messages = [];
+
+                chatProfile.threads.push(thread);
+                chatProfile.thread_id_indices[strThreadId] = chatProfile.threads.length - 1;
             }
 
             let threadMessage = {
@@ -65,13 +72,14 @@ route.register("/pull", function(req, res) {
                 "datetime_sent": result.datetime_sent
             };
 
-            threads[threadId].thread_messages.push(threadMessage);
+            let threadIndex = chatProfile.thread_id_indices[strThreadId];
+            chatProfile.threads[threadIndex].thread_messages.push(threadMessage);
         }
 
         res.writeHead(statusCode, statusMessage, {
             "Content-Type": "application/json"
         });
-        res.write(JSON.stringify(threads));
+        res.write(JSON.stringify(chatProfile));
         res.end();
     });
 });
