@@ -197,3 +197,19 @@ function sendMessage() {
             console.log("Received response: " + xhr.statusText);
         });
 }
+
+function autoAdjustTextBox() {
+    // Assumes that the padding is 5px
+    if(chatClient.messageBox.prop("clientHeight") >= chatClient.charHeight * 3 + 10) {
+        chatClient.messageBox.css("overflow", "scroll");
+    } else {
+        chatClient.messageBox.css("overflow", "hidden");
+
+        // Clears the style
+        chatClient.messageBox.css("height","1px");
+
+        // Gets the height of content without css height influence
+        var textareaScrollHeight = chatClient.messageBox.prop("scrollHeight");
+        chatClient.messageBox.css("height", (textareaScrollHeight - 10).toString() + "px");
+    }
+}

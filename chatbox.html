@@ -7,7 +7,6 @@
         <link rel="stylesheet" type="text/css" href="stylesheet.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="cjquery_script.js"></script>
-        <script src="cfunc_script.js"></script>
     </head>
     <body>
         <div id="left-bar">
@@ -108,9 +107,9 @@
             <div id="message-box">
                 <textarea id="pending-message" placeholder="Send a message..." onkeyup="autoAdjustTextBox()"></textarea>
                 <script>
-                    var messageBox = document.getElementById("pending-message");
-                    var charHeight = messageBox.scrollHeight - 10;  // -10 to account for padding
-                    messageBox.style.height = charHeight.toString() + "px";
+                    chatClient.messageBox = $("#pending-message");
+                    chatClient.charHeight = chatClient.messageBox.prop("scrollHeight") - 10;  // -10 to account for padding
+                    chatClient.messageBox.css("height", chatClient.charHeight.toString() + "px");
                 </script>
                 <button id="send" onclick="sendMessage()">Send</button>
             </div>
