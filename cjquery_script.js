@@ -1,3 +1,5 @@
+var chatClient = {}
+
 $(document).ready(
     function () {
         setupPage();
@@ -17,14 +19,14 @@ function setupPage() {
             xhrFields: {
                 withCredentials: true
             },
-            data: {user_id: 3}
+            data: {user_id: 1}
         }
     )
         .done(function(data, textStatus, xhr) {
-            console.log(data);
             console.log("Received response: " + xhr.statusText);
+            chatClient.chatProfile = data;
             fillPage(data);
-            // TODO setupEventHandlers();
+            setupChatEventHandlers();
         });
 }
 
@@ -55,6 +57,71 @@ function fillPage(chatProfile) {
 
         $("#chats").append($chatTemplate);
     }
+}
+
+function setupChatEventHandlers() {
+    $(".chat").click(function (event) {
+
+        const MESSAGE_TYPE = {
+            "sender": "sender",
+            "receiver": "receiver"
+        };
+
+        $("#conversations").html("");
+
+        var threadId = jQuery(this).attr("data-thread-id"),
+            threadIndex = chatClient.chatProfile.thread_id_indices[threadId.toString()],
+            thread = chatClient.chatProfile.threads[threadIndex],
+            prevDate = new Date(0);
+
+        for(var i = thread.thread_messages.length - 1; i >= 0; i--) {
+            var messageContent = thread.thread_messages[i],
+                messageType = (messageContent.sender_user_id !== 1) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
+                messageDate = new Date(messageContent.datetime_sent * 1000);
+
+            var messageTimeHour = convertHourStandard(messageDate.getHours()),
+                messageTimeMinute = padZero(messageDate.getMinutes()),
+                messageTimePeriod = (messageDate.getHours() < 12) ? "AM" : "PM";
+
+            var messageTimeStr = messageTimeHour + ":" + messageTimeMinute + " " +  messageTimePeriod;
+
+            var $messageTimeTemplate = $($("#message-time-template").html());
+
+            if(messageDate.getDate() > prevDate.getDate()
+                || messageDate.getMonth() > prevDate.getMonth()
+                || messageDate.getFullYear() > prevDate.getFullYear()) {
+                $messageTimeTemplate.find(".message-time-date").html(messageDate.toDateString());
+                $("#conversations").append($messageTimeTemplate);
+            }
+
+            var $messageTemplate = $($("#message-template").html());
+            $messageTemplate.find(".message-type").attr("class", messageType);
+            $messageTemplate.find(".message-type-body").attr("class", messageType + "-body");
+            $messageTemplate.find(".message-content")
+                .attr("class", "message-content " + messageType + "-body-content")
+                .html(messageContent.message);
+            $messageTemplate.find(".time").html(messageTimeStr);
+
+            $("#conversations").append($messageTemplate);
+            prevDate = messageDate;
+        }
+    });
+}
+
+function convertHourStandard(hour) {
+    hour %= 12;
+
+    if(hour === 0)
+        hour = 12;
+
+    return hour;
+}
+
+function padZero(min) {
+    if(min < 10)
+        return "0" + min;
+
+    return min;
 }
 
 function setupOptionsMenu() {

@@ -20,68 +20,29 @@
                     <input type="image" src="http://placehold.it/20x20">    <!-- Set Status -->
                 </div>
             </div>
-            <div id="chats" class="left-bar-item">
-                <!--
-                Sample chat message
--->
+
+            <script id="chat-template" type="text/html">
                 <div class="chat">
                     <div class="avatar">
                         <img src="http://placehold.it/50x50">
                     </div>
                     <div class="chat-pane">
                         <div class="chat-pane-info">
-                            <p class="chat-pane-name">MyName</p>
+                            <p class="chat-pane-name"></p>
                             <div class="chat-pane-options">
-                                <input type="image" src="http://placehold.it/15x15">      <!-- Pin -->
-                                <input type="image" src="http://placehold.it/15x15">      <!-- Remove -->
+                                <input type="image" src="img/rsz_pin-icon.png">
+                                <input type="image" src="img/rsz_recyclebin.png">
                             </div>
                         </div>
                         <div class="chat-pane-preview">
-                            <p class="chat-pane-preview-message">A 30 character message tha...</p>
-                            <p class="chat-pane-preview-date">05/20/17</p>
+                            <p class="chat-pane-preview-message"></p>
+                            <p class="chat-pane-preview-date"></p>
                         </div>
                     </div>
                 </div>
-                
-                <div class="chat">
-                    <div class="avatar">
-                        <img src="http://placehold.it/50x50">
-                    </div>
-                    <div class="chat-pane">
-                        <div class="chat-pane-info">
-                            <p class="chat-pane-name">MyName</p>
-                            <div class="chat-pane-options">
-                                <img alt="pin" src="http://placehold.it/15x15">
-                                <img alt="delete" src="http://placehold.it/15x15">
-                            </div>
-                        </div>
-                        <div class="chat-pane-preview">
-                            <p class="chat-pane-preview-message">A 20 character message</p>
-                            <p class="chat-pane-preview-date">05/20/17</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="chat">
-                    <div class="avatar">
-                        <img src="http://placehold.it/50x50">
-                    </div>
-                    <div class="chat-pane">
-                        <div class="chat-pane-info">
-                            <p class="chat-pane-name">MyName</p>
-                            <div class="chat-pane-options">
-                                <img alt="pin" src="http://placehold.it/15x15">
-                                <img alt="delete" src="http://placehold.it/15x15">
-                            </div>
-                        </div>
-                        <div class="chat-pane-preview">
-                            <p class="chat-pane-preview-message">A 20 character me...</p>
-                            <p class="chat-pane-preview-date">05/20/17</p>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
+            </script>
+
+            <div id="chats" class="left-bar-item"></div>
         </div>
         <div id="main">
             <div id="info-bar">
@@ -106,7 +67,24 @@
                 <p class="placeholder-text">Select a conversation...</p>
             </div>
 -->
-            
+            <script id="message-template" type="text/html">
+                <div class="message">
+                    <div class="message-type">
+                        <div class="message-type-body">
+                            <p class="message-content message-type-body-content"></p>
+                        </div>
+                        <p class="time"></p>
+                    </div>
+                </div>
+            </script>
+
+            <script id="message-time-template" type="text/html">
+                <div class="message-time">
+                    <p class="message-time-date"></p>
+                    <hr>
+                </div>
+            </script>
+
             <div id="chatbox">
                 <div id="conversations">
                     <div class="message">
@@ -126,15 +104,15 @@
                         </div>
                     </div>
                 </div>
-                <div id="message-box">
-                    <textarea id="pending-message" placeholder="Send a message..." onkeyup="autoAdjustTextBox()"></textarea>
-                    <script>
-                        var messageBox = document.getElementById("pending-message");
-                        var charHeight = messageBox.scrollHeight - 10;  // -10 to account for padding
-                        messageBox.style.height = charHeight.toString() + "px";
-                    </script>
-                    <button id="send" onclick="sendMessage()">Send</button>
-                </div>
+            </div>
+            <div id="message-box">
+                <textarea id="pending-message" placeholder="Send a message..." onkeyup="autoAdjustTextBox()"></textarea>
+                <script>
+                    var messageBox = document.getElementById("pending-message");
+                    var charHeight = messageBox.scrollHeight - 10;  // -10 to account for padding
+                    messageBox.style.height = charHeight.toString() + "px";
+                </script>
+                <button id="send" onclick="sendMessage()">Send</button>
             </div>
         </div>
     </body>
