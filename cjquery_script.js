@@ -60,52 +60,60 @@ function fillPage(chatProfile) {
 }
 
 function setupChatEventHandlers() {
-    $(".chat").click(function (event) {
-
-        const MESSAGE_TYPE = {
-            "sender": "sender",
-            "receiver": "receiver"
-        };
-
-        $("#conversations").html("");
-
-        var threadId = jQuery(this).attr("data-thread-id"),
-            threadIndex = chatClient.chatProfile.thread_id_indices[threadId.toString()],
-            thread = chatClient.chatProfile.threads[threadIndex],
-            prevDate = new Date(0);
-
-        for(var i = thread.thread_messages.length - 1; i >= 0; i--) {
-            var messageContent = thread.thread_messages[i],
-                messageType = (messageContent.sender_user_id !== 1) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
-                messageDate = new Date(messageContent.datetime_sent * 1000);
-
-            var messageTimeHour = convertHourStandard(messageDate.getHours()),
-                messageTimeMinute = padZero(messageDate.getMinutes()),
-                messageTimePeriod = (messageDate.getHours() < 12) ? "AM" : "PM";
-
-            var messageTimeStr = messageTimeHour + ":" + messageTimeMinute + " " +  messageTimePeriod;
-
-            var $messageTimeTemplate = $($("#message-time-template").html());
-
-            if(messageDate.getDate() > prevDate.getDate()
-                || messageDate.getMonth() > prevDate.getMonth()
-                || messageDate.getFullYear() > prevDate.getFullYear()) {
-                $messageTimeTemplate.find(".message-time-date").html(messageDate.toDateString());
-                $("#conversations").append($messageTimeTemplate);
-            }
-
-            var $messageTemplate = $($("#message-template").html());
-            $messageTemplate.find(".message-type").attr("class", messageType);
-            $messageTemplate.find(".message-type-body").attr("class", messageType + "-body");
-            $messageTemplate.find(".message-content")
-                .attr("class", "message-content " + messageType + "-body-content")
-                .html(messageContent.message);
-            $messageTemplate.find(".time").html(messageTimeStr);
-
-            $("#conversations").append($messageTemplate);
-            prevDate = messageDate;
-        }
+    $(".chat").click(function(event) {
+        displayChatThread(this);
     });
+}
+
+function displayChatThread(obj) {
+    const MESSAGE_TYPE = {
+        "sender": "sender",
+        "receiver": "receiver"
+    };
+
+    $("#conversations").html("");
+
+    var threadId = jQuery(obj).attr("data-thread-id"),
+        threadIndex = chatClient.chatProfile.thread_id_indices[threadId.toString()],
+        thread = chatClient.chatProfile.threads[threadIndex],
+        convoDOM = $("conversations"),
+        prevDate = new Date(0);
+
+    for(var i = thread.thread_messages.length - 1; i >= 0; i--) {
+        // parse message data
+        var messageContent = thread.thread_messages[i],
+            messageType = (messageContent.sender_user_id !== 1) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
+            messageDate = new Date(messageContent.datetime_sent * 1000),
+            messageTimeHour = convertHourStandard(messageDate.getHours()),
+            messageTimeMinute = padZero(messageDate.getMinutes()),
+            messageTimePeriod = (messageDate.getHours() < 12) ? "AM" : "PM",
+            messageTimeStr = messageTimeHour + ":" + messageTimeMinute + " " +  messageTimePeriod,
+            $messageTimeTemplate = $($("#message-time-template").html()),
+            $messageTemplate = $($("#message-template").html());
+
+        // determine whether to display date before messages
+        if(messageDate.getDate() > prevDate.getDate()
+            || messageDate.getMonth() > prevDate.getMonth()
+            || messageDate.getFullYear() > prevDate.getFullYear()) {
+            $messageTimeTemplate.find(".message-time-date").html(messageDate.toDateString());
+            convoDOM.append($messageTimeTemplate);
+        }
+
+        // appends the message with event handler to show time when clicked
+        $messageTemplate.find(".message-type").attr("class", messageType);
+        $messageTemplate.find(".message-type-body").attr("class", messageType + "-body");
+        $messageTemplate.find(".message-content")
+            .attr("class", "message-content " + messageType + "-body-content")
+            .html(messageContent.message);
+        $messageTemplate.find(".time").html(messageTimeStr);
+
+        $messageTemplate.click(function(event) {
+            displayTime(this);
+        });
+
+        convoDOM.append($messageTemplate);
+        prevDate = messageDate;
+    }
 }
 
 function convertHourStandard(hour) {
@@ -122,6 +130,10 @@ function padZero(min) {
         return "0" + min;
 
     return min;
+}
+
+function displayTime(obj) {
+    jQuery(obj).find(".time").toggle();
 }
 
 function setupOptionsMenu() {
