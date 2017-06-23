@@ -31,7 +31,6 @@ function setupPage() {
 }
 
 function fillPage(chatProfile) {
-
     for(var i = 0; i < chatProfile.threads.length; i++) {
         var thread = chatProfile.threads[i];
 
@@ -62,6 +61,7 @@ function fillPage(chatProfile) {
 function setupChatEventHandlers() {
     $(".chat").click(function(event) {
         displayChatThread(this);
+        console.log("here");
     });
 }
 
@@ -71,13 +71,13 @@ function displayChatThread(obj) {
         "receiver": "receiver"
     };
 
-    $("#conversations").html("");
-
     var threadId = jQuery(obj).attr("data-thread-id"),
         threadIndex = chatClient.chatProfile.thread_id_indices[threadId.toString()],
         thread = chatClient.chatProfile.threads[threadIndex],
-        convoDOM = $("conversations"),
+        convoDOM = $("#conversations"),
         prevDate = new Date(0);
+
+    convoDOM.html("");
 
     for(var i = thread.thread_messages.length - 1; i >= 0; i--) {
         // parse message data
