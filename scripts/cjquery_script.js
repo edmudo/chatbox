@@ -61,7 +61,9 @@ function fillPage(chatProfile) {
 function setupChatEventHandlers() {
     $(".chat").click(function(event) {
         displayChatThread(this);
-        console.log("here");
+        $(".receiver, .sender").click(function(event) {
+            displayTime(this);
+        });
     });
 }
 
@@ -106,10 +108,6 @@ function displayChatThread(obj) {
             .attr("class", "message-content " + messageType + "-body-content")
             .html(messageContent.message);
         $messageTemplate.find(".time").html(messageTimeStr);
-
-        $messageTemplate.click(function(event) {
-            displayTime(this);
-        });
 
         convoDOM.append($messageTemplate);
         prevDate = messageDate;
@@ -190,11 +188,13 @@ function sendMessage() {
             data: {thread_id: 1, sender_user_id: 1, msg: pendingMessage}
         }
     )
-        .done(function(data, textStatus, xhr) {
+        .done(function(data, textStatus, jqxhr) {
+            // TODO: notify/signal user that message was sent
+
             console.log(data);
             console.log(textStatus);
-            console.log(xhr.statusText);
-            console.log("Received response: " + xhr.statusText);
+            console.log(jqxhr.statusText);
+            console.log("Received response: " + jqxhr.statusText);
         });
 }
 

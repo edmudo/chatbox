@@ -13,11 +13,62 @@ body {
     flex-flow: row;
 }
 
-#left-bar {
-    flex: 0 1 auto;
+#left-bar-login, #left-bar-chat {
     flex-flow: column;
+}
+
+#left-bar-login {
+    width: 300px;
+    border-right: 1px solid black;
+}
+
+#left-bar-chat {
+    flex: 1 1 auto;
     min-width: 300px;
 }
+
+/* Login styling */
+
+#left-bar-login {
+    padding: 0 10px;
+}
+
+#main-login {
+    flex: 3 1 auto;
+}
+
+#login-form {
+    display: table;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid gray;
+}
+
+#login-form-items {
+    display: flex;
+    flex-flow: column;
+}
+
+#login-form-items {
+
+}
+
+.login-form-item {
+    width: 200px;
+    margin: 5px 0;
+}
+
+#failed-login-message {
+    display: none;
+}
+
+input[type="email"].login-form-item, input[type="password"].login-form-item {
+    font-size: 16px;
+    padding: 5px;
+    border-style: solid;
+}
+
+/* Chat styling */
 
 #chat-manager {
     display: flex;
@@ -103,8 +154,8 @@ body {
     margin: 0;
 }
 
-#main {
-    flex: 2;
+#main-chat {
+    flex: 2 1 auto;
     flex-flow: column;
     display: flex;
     border-left: 1px solid gray;

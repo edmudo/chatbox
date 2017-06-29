@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>ChatBox</title>
+        <meta charset="utf-8">
+        <meta name="author" content="Edmund Do">
+        <link rel="stylesheet" type="text/css" href="stylesheet.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="ijquery_script.js"></script>
+    </head>
+    <body>
+        <div id="left-bar-login">
+            <h1>ChatBox</h1>
+            <p>The only online chat client that you will ever need!</p>
+        </div>
+        <div id="main-login">
+            <form id="login-form" method="post">
+                <div id="login-form-items">
+                    <input class="login-form-item" name="email" type="email" placeholder="Email">
+                    <input class="login-form-item" name="password" type="password" placeholder="Password">
+                    <p id="failed-login-message" class="login-form-item">Invalid username or password.</p>
+                    <button class="login-form-item" name="submit" type="submit" form="login-form" value="Login">Login</button>
+                </div>
+            </form>
+        </div>
+    </body>
+</html>

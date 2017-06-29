@@ -1,15 +1,46 @@
-const SERVER_PORT = 63342;
+const SERVER_PORT = '';
 
-var http = require("http");
-var fs = require("fs");
-var url = require("url");
-var qs = require("querystring");
+const http = require("http");
+const fs = require("fs");
+const url = require("url");
+const qs = require("querystring");
 
-var Database = require("./Database");
-var Route = require("./Route");
+const StaticHTTP = require("./StaticHTTP");
+const Database = require("./Database");
+const Route = require("./Route");
 
-var connection = new Database("./lib/creds.json");
-var route = new Route();
+const staticServer = new StaticHTTP();
+const connection = new Database("./lib/creds.json");
+const route = new Route();
+
+route.register("/login", function(req, res) {
+    let data = req.data;
+    let buf = crypto.randomBytes(16);
+    let date = new Date();
+    date.setMonth(date.getMonth() + 1);
+
+    let query = "SELECT user_emails.email, users.password, users.first_name, users.last_name " +
+        "FROM user_emails " +
+        "LEFT JOIN users ON user_emails.user_id = users.user_id " +
+        "WHERE user_emails.email = ? AND users.password = ?";
+
+    connection.select(query, [data.email, data.password], function(statusCode, statusMessage, results) {
+
+        if(results.length > 0) {
+            res.writeHead(302, statusMessage, {
+                "Content-Type": "text/html",
+                "Set-Cookie": `sessionId=${buf.toString("hex")}; expires=${date.toUTCString()}; path=/`,
+                "Location": "http://localhost/ChatClient/chatbox.html"
+            });
+            res.end();
+        } else {
+            res.writeHead(statusCode, statusMessage, {
+                "Content-Type": "text/html"
+            });
+            res.end();
+        }
+    })
+});
 
 route.register("/send", function(req, res) {
     let data = req.data;
@@ -134,15 +165,15 @@ route.register("/seen", function(req, res) {
 });
 
 http.createServer(function (req, res) {
-    // Set response headers
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:" + SERVER_PORT)
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-
-    let pathHandler = route.pathHandlers[url.parse(req.url).pathname];
+    let pathName = url.parse(req.url).pathname;
+    let pathHandler = route.pathHandlers[pathName];
 
     if(typeof pathHandler !== "undefined") {
+        res.setHeader("Access-Control-Allow-Origin", "localhost:8080");
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+
         if (req.method.toUpperCase() === "GET") {
-            pathHandler(req, res);
+            pathHandler(req, res)
         } else if (req.method.toUpperCase() === "POST") {
             let reqData = '';
 
@@ -161,8 +192,9 @@ http.createServer(function (req, res) {
             });
         }
     } else {
-        res.writeHead(404);
-        res.end();
+        if(req.method.toUpperCase() === "GET") {
+            staticServer.serveFile(req, res, pathName.substr(1));
+        }
     }
 }).listen(8080);
 
