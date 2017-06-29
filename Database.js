@@ -1,5 +1,5 @@
-var fs = require("fs");
-var mysql = require("mysql");
+const fs = require("fs");
+const mysql = require("mysql");
 
 module.exports = Database;
 
