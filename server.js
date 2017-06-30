@@ -36,7 +36,7 @@ route.register("/login", function(req, res) {
                     res.writeHead(200, statusMessage, {
                         "Content-Type": "text/html",
                         "Set-Cookie": `sessionId=${sessionId}; expires=${date.toUTCString()}; path=/`,
-                        "Location": "http://localhost:8080/chatbox"
+                        "x-chatbox-location": "http://localhost:8080/chatbox"
                     });
                     res.end();
                 });
