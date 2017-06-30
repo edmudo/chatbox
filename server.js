@@ -1,9 +1,8 @@
-const SERVER_PORT = '';
-
 const http = require("http");
 const fs = require("fs");
 const url = require("url");
 const qs = require("querystring");
+const crypto = require("crypto");
 
 const StaticHTTP = require("./StaticHTTP");
 const Database = require("./Database");
@@ -15,31 +14,61 @@ const route = new Route();
 
 route.register("/login", function(req, res) {
     let data = req.data;
-    let buf = crypto.randomBytes(16);
     let date = new Date();
     date.setMonth(date.getMonth() + 1);
 
-    let query = "SELECT user_emails.email, users.password, users.first_name, users.last_name " +
+    let query = "SELECT users.user_id, user_emails.email, users.password, users.first_name, users.last_name, user_active_sessions.ip, user_active_sessions.hex_id " +
         "FROM user_emails " +
         "LEFT JOIN users ON user_emails.user_id = users.user_id " +
+        "LEFT JOIN user_active_sessions ON user_emails.user_id = user_active_sessions.user_id " +
         "WHERE user_emails.email = ? AND users.password = ?";
 
     connection.select(query, [data.email, data.password], function(statusCode, statusMessage, results) {
-
         if(results.length > 0) {
-            res.writeHead(302, statusMessage, {
-                "Content-Type": "text/html",
-                "Set-Cookie": `sessionId=${buf.toString("hex")}; expires=${date.toUTCString()}; path=/`,
-                "Location": "http://localhost/ChatClient/chatbox.html"
-            });
-            res.end();
+            if (results[0].hex_id === null) {
+                // Generate new hex_id
+                crypto.randomBytes(16, function (err, buf) {
+                    let sessionId = buf.toString("hex");
+                    let query = "INSERT INTO user_active_sessions (user_id, ip, hex_id, expire) VALUES (?, ?, ?, ?)";
+
+                    connection.update(query, [results[0].user_id, req.connection.remoteAddress, sessionId, date], function (statusCode, statusMessage) {});
+
+                    res.writeHead(301, statusMessage, {
+                        "Content-Type": "text/html",
+                        "Set-Cookie": `sessionId=${sessionId}; expires=${date.toUTCString()}; path=/`,
+                        "Location": "http://localhost:8080/chatbox"
+                    });
+                    res.end();
+                });
+            } else {
+                let isSessionAndIpMatch = false;
+                for (let result of results) {
+                    if (result.ip === req.connection.remoteAddress) {
+                        isSessionAndIpMatch = true;
+                        res.writeHead(200, statusMessage, {
+                            "Content-Type": "text/html",
+                            "Set-Cookie": `sessionId=${result.hex_id}; expires=${date.toUTCString()}; path=/`,
+                            "x-chatbox-location": "http://localhost:8080/chatbox"
+                        });
+                        res.end();
+                        break;
+                    }
+                }
+                // else if(!isSessionAndIpMatch && result.ip !== req.connection.remoteAddress) {
+                //     // TODO: Logged in on new device
+                //
+                //     res.writeHead(302, statusMessage, {
+                //         "Content-Type": "text/html",
+                //     });
+                // }
+            }
         } else {
             res.writeHead(statusCode, statusMessage, {
                 "Content-Type": "text/html"
             });
             res.end();
         }
-    })
+    });
 });
 
 route.register("/send", function(req, res) {
@@ -169,7 +198,7 @@ http.createServer(function (req, res) {
     let pathHandler = route.pathHandlers[pathName];
 
     if(typeof pathHandler !== "undefined") {
-        res.setHeader("Access-Control-Allow-Origin", "localhost:8080");
+        res.setHeader("Access-Control-Allow-Origin", "http://localhost:8080");
         res.setHeader("Access-Control-Allow-Credentials", "true");
 
         if (req.method.toUpperCase() === "GET") {

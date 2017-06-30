@@ -18,8 +18,12 @@ function sendLogin() {
         }
     )
         .done(function(data, textStatus, jqxhr) {
-            if(jqxhr.getResponseHeader("Location") === null) {
+            var responseLink = jqxhr.getResponseHeader("x-chatbox-location");
+            console.log(responseLink);
+            if(responseLink === null) {
                 $("#failed-login-message").toggle(true);
+            } else {
+                window.location.replace(jqxhr.getResponseHeader("x-chatbox-location"));
             }
         })
 
