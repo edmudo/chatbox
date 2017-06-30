@@ -17,10 +17,10 @@ route.register("/login", function(req, res) {
     let date = new Date();
     date.setMonth(date.getMonth() + 1);
 
-    let query = "SELECT users.user_id, user_emails.email, users.password, users.first_name, users.last_name, user_active_sessions.ip, user_active_sessions.hex_id " +
+    let query = "SELECT users.user_id, user_emails.email, users.password, users.first_name, users.last_name, user_sessions.ip, user_sessions.hex_id " +
         "FROM user_emails " +
         "LEFT JOIN users ON user_emails.user_id = users.user_id " +
-        "LEFT JOIN user_active_sessions ON user_emails.user_id = user_active_sessions.user_id " +
+        "LEFT JOIN user_sessions ON user_emails.user_id = user_sessions.user_id " +
         "WHERE user_emails.email = ? AND users.password = ?";
 
     connection.select(query, [data.email, data.password], function(statusCode, statusMessage, results) {
@@ -29,7 +29,7 @@ route.register("/login", function(req, res) {
                 // Generate new hex_id
                 crypto.randomBytes(16, function (err, buf) {
                     let sessionId = buf.toString("hex");
-                    let query = "INSERT INTO user_active_sessions (user_id, ip, hex_id, expire) VALUES (?, ?, ?, ?)";
+                    let query = "INSERT INTO user_sessions (user_id, ip, hex_id, expire) VALUES (?, ?, ?, ?)";
 
                     connection.update(query, [results[0].user_id, req.connection.remoteAddress, sessionId, date], function (statusCode, statusMessage) {});
 
