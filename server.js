@@ -1,23 +1,22 @@
 const http = require("http");
-const fs = require("fs");
 const url = require("url");
 const qs = require("querystring");
-const crypto = require("crypto");
 
-const StaticHTTP = require("./StaticHTTP");
 const Database = require("./Database");
 const Route = require("./Route");
 
-const staticServer = new StaticHTTP();
+const app = require("./app");
 const connection = new Database("./lib/creds.json");
 const route = new Route();
+const staticServer = require("./StaticHTTP");
 
 route.register("/login", function(req, res) {
     let data = req.data;
-    let date = new Date();
-    date.setMonth(date.getMonth() + 1);
 
-    let query = "SELECT users.user_id, user_emails.email, users.password, users.first_name, users.last_name, user_sessions.ip, user_sessions.hex_id " +
+    let query =
+        "SELECT " +
+            "users.user_id, user_emails.email, users.password, users.first_name, users.last_name, " +
+            "user_sessions.ip, user_sessions.hex_id, user_sessions.expire " +
         "FROM user_emails " +
         "LEFT JOIN users ON user_emails.user_id = users.user_id " +
         "LEFT JOIN user_sessions ON user_emails.user_id = user_sessions.user_id " +
@@ -26,41 +25,30 @@ route.register("/login", function(req, res) {
     connection.select(query, [data.email, data.password], function(statusCode, statusMessage, results) {
         if(results.length > 0) {
             if (results[0].hex_id === null) {
-                // Generate new hex_id
-                crypto.randomBytes(16, function (err, buf) {
-                    let sessionId = buf.toString("hex");
-                    let query = "INSERT INTO user_sessions (user_id, ip, hex_id, expire) VALUES (?, ?, ?, ?)";
+               app.generateSessionCookie(function(sessionId, expire, sessionCookie) {
+                   let query = "INSERT INTO user_sessions (user_id, ip, hex_id, expire) VALUES (?, ?, ?, ?)";
+                   connection.update(query, [results[0].user_id, req.connection.remoteAddress, sessionId, expire]);
 
-                    connection.update(query, [results[0].user_id, req.connection.remoteAddress, sessionId, date], function (statusCode, statusMessage) {});
+                   res.writeHead(200, statusMessage, {
+                       "Content-Type": "text/html",
+                       "Set-Cookie": sessionCookie,
+                       "x-chatbox-location": "http://localhost:8080/chatbox"
+                   });
+                   res.end();
+               });
+            } else {
+                let session = app.findSession(results, req.connection.remoteAddress);
 
+                if(session) {
                     res.writeHead(200, statusMessage, {
                         "Content-Type": "text/html",
-                        "Set-Cookie": `sessionId=${sessionId}; expires=${date.toUTCString()}; path=/`,
+                        "Set-Cookie": `sessionId=${session.hex_id}; expires=${session.expire}; path=/`,
                         "x-chatbox-location": "http://localhost:8080/chatbox"
                     });
                     res.end();
-                });
-            } else {
-                let isSessionAndIpMatch = false;
-                for (let result of results) {
-                    if (result.ip === req.connection.remoteAddress) {
-                        isSessionAndIpMatch = true;
-                        res.writeHead(200, statusMessage, {
-                            "Content-Type": "text/html",
-                            "Set-Cookie": `sessionId=${result.hex_id}; expires=${date.toUTCString()}; path=/`,
-                            "x-chatbox-location": "http://localhost:8080/chatbox"
-                        });
-                        res.end();
-                        break;
-                    }
+                } else {
+                    // TODO: Logged in on new device
                 }
-                // else if(!isSessionAndIpMatch && result.ip !== req.connection.remoteAddress) {
-                //     // TODO: Logged in on new device
-                //
-                //     res.writeHead(302, statusMessage, {
-                //         "Content-Type": "text/html",
-                //     });
-                // }
             }
         } else {
             res.writeHead(statusCode, statusMessage, {
@@ -118,60 +106,7 @@ route.register("/pull", function(req, res) {
 
     connection.select(query, [data.user_id], function(statusCode, statusMessage, results) {
         // Process results into an organized object
-        let chatProfile = {};
-
-        chatProfile.threads = [];
-        chatProfile.thread_id_indices = {};
-
-        for(let result of results) {
-            let threadId = result.thread_id,
-                strThreadId = threadId.toString(),
-                isGroupThread = result.is_group,
-                senderName = result.first_name + " " + result.last_name;
-
-            // Sets up thread if id does not exist
-            if(!chatProfile.thread_id_indices.hasOwnProperty(threadId)) {
-                let thread = {};
-
-                thread.pinned = (result.pinned === 1);
-                thread.thread_id = threadId;
-                thread.thread_name = "";
-                thread.is_group = result.is_group;
-                thread.participants = {};
-                thread.thread_messages = [];
-
-                chatProfile.threads.push(thread);
-                chatProfile.thread_id_indices[strThreadId] = chatProfile.threads.length - 1;
-            }
-
-            // Thread message format
-            let threadMessage = {
-                "sender_user_id": result.sender_user_id,
-                "sender_name": senderName,
-                "message": result.message,
-                "datetime_sent": result.datetime_sent
-            };
-
-            let threadIndex = chatProfile.thread_id_indices[strThreadId],
-                relevantThread = chatProfile.threads[threadIndex];
-
-            // Sets up the thread name
-            if(isGroupThread === 0 && result.sender_user_id !== parseInt(data.user_id)) {
-                relevantThread.thread_name = senderName;
-            } else if(isGroupThread === 1
-                && result.sender_user_id !== parseInt(data.user_id)
-                && typeof relevantThread.participants[result.sender_user_id.toString()] === "undefined") {
-
-                if(relevantThread.thread_name.length === 0)
-                    relevantThread.thread_name += senderName;
-                else
-                    relevantThread.thread_name += ", " + senderName;
-
-                relevantThread.participants[result.sender_user_id.toString()] = senderName;
-            }
-
-            relevantThread.thread_messages.push(threadMessage);
-        }
+        let chatProfile = app.createThreadProfile(data.user_id, results);
 
         res.writeHead(statusCode, statusMessage, {
             "Content-Type": "application/json"
