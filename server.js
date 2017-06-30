@@ -33,7 +33,7 @@ route.register("/login", function(req, res) {
 
                     connection.update(query, [results[0].user_id, req.connection.remoteAddress, sessionId, date], function (statusCode, statusMessage) {});
 
-                    res.writeHead(301, statusMessage, {
+                    res.writeHead(200, statusMessage, {
                         "Content-Type": "text/html",
                         "Set-Cookie": `sessionId=${sessionId}; expires=${date.toUTCString()}; path=/`,
                         "Location": "http://localhost:8080/chatbox"
