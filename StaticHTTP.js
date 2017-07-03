@@ -4,16 +4,27 @@ const fs = require("fs");
 const path = require("path");
 const glob = require("glob");
 
-StaticHTTP.serveFile = function(req, res, filepath) {
-    glob(`public/{?(${filepath}.*|${filepath}),${filepath}}`, function(err, filepaths) {
+/**
+ * Serves a static file that is found in the public directory
+ *
+ * @param {ClientRequest} req - the request object
+ * @param {ClientResponse} res - the response object
+ * @param {String} pathName - the pathname with or without the leading '/'
+ */
+
+StaticHTTP.serveFile = function(req, res, pathName) {
+    if(pathName.charAt(0) === '/')
+        pathName = pathName.substr(1);
+
+    glob(`public/{+(${pathName}.*|${pathName}),${pathName}}`, function(err, pathNames) {
 
         if(err) throw err;
 
-        if(filepaths.length === 0) {
+        if(pathNames.length === 0) {
             send404(req, res);
         } else {
-            let contentType = getContentType(filepaths[0]);
-            fs.readFile(filepaths[0], function (err, data) {
+            let contentType = getContentType(pathNames[0]);
+            fs.readFile(pathNames[0], function (err, data) {
                 if (err) {
                     send404(req, res);
                 } else {
@@ -28,8 +39,26 @@ StaticHTTP.serveFile = function(req, res, filepath) {
     });
 };
 
-function getContentType(filePath) {
-    let ext = path.extname(filePath);
+/**
+ * Serves a 404
+ *
+ * @param {ClientRequest} req - the request object
+ * @param {ClientResponse} res - the response object
+ */
+
+StaticHTTP.serve404 = function(req, res) {
+    send404(req, res);
+};
+
+/**
+ * Determines the content type from it's full pathname
+ *
+ * @param {String} pathName - the full pathname
+ * @returns {String} - the HTTP content type
+ */
+
+function getContentType(pathName) {
+    let ext = path.extname(pathName);
 
     switch(ext) {
         case ".html":
