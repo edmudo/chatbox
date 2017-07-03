@@ -10,15 +10,14 @@ app.generateSessionCookie = function(cb) {
 
         date.setMonth(date.getMonth() + 1);
 
-        cb(sessionId, date, `sessionId=${sessionId}; expires=${date.toUTCString()}; path=/`);
+        cb(sessionId, date, `session_id=${sessionId}; expires=${date.toUTCString()}; path=/`);
     });
 };
 
 app.findSession = function(results, ip) {
     for (let result of results) {
-        if (result.ip === ip) {
+        if (result.ip === ip)
             return result;
-        }
     }
 
     return null;
