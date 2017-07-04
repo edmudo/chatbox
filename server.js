@@ -10,7 +10,9 @@ const connection = new Database("./lib/creds.json");
 const route = new Route();
 const staticServer = require("./StaticHTTP");
 
-route.register("/login", function(req, res) {
+route.register("/chatbox");
+
+route.register("/login", {requireAuth: false}, function(req, res) {
     let data = req.data;
 
     let query =
@@ -31,7 +33,10 @@ route.register("/login", function(req, res) {
 
                    res.writeHead(200, statusMessage, {
                        "Content-Type": "text/html",
-                       "Set-Cookie": sessionCookie,
+                       "Set-Cookie": [
+                           `user_id=${results[0].user_id}; expires=${expire}; path=/`,
+                           `${sessionCookie}`
+                       ],
                        "x-chatbox-location": "http://localhost:8080/chatbox"
                    });
                    res.end();
@@ -42,7 +47,10 @@ route.register("/login", function(req, res) {
                 if(session) {
                     res.writeHead(200, statusMessage, {
                         "Content-Type": "text/html",
-                        "Set-Cookie": `sessionId=${session.hex_id}; expires=${session.expire}; path=/`,
+                        "Set-Cookie": [
+                            `user_id=${results[0].user_id}; expires=${session.expire}; path=/`,
+                            `session_id=${session.hex_id}; expires=${session.expire}; path=/`,
+                        ],
                         "x-chatbox-location": "http://localhost:8080/chatbox"
                     });
                     res.end();
@@ -72,8 +80,6 @@ route.register("/send", function(req, res) {
 });
 
 route.register("/pull", function(req, res) {
-    let data = url.parse(req.url, true).query;
-
     // Selects 20 entries of each thread relevant to the user
     let query =
         "SELECT " +
@@ -81,6 +87,7 @@ route.register("/pull", function(req, res) {
             "messages_limited.sender_user_id, users.first_name, users.last_name, " +
             "messages_limited.message, UNIX_TIMESTAMP(messages_limited.datetime_sent) AS datetime_sent " +
         "FROM threads_users " +
+        "LEFT JOIN user_sessions ON threads_users.user_id = user_sessions.user_id " +
         "LEFT JOIN threads ON threads_users.thread_id = threads.thread_id " +
         "LEFT JOIN (" +
             "SELECT " +
@@ -99,14 +106,14 @@ route.register("/pull", function(req, res) {
             "LEFT JOIN messages ON threads.thread_id = messages.thread_id " +
             "GROUP BY threads.thread_id" +
         ") AS threads_last_update ON threads_users.thread_id = threads_last_update.thread_id " +
-        "WHERE threads_users.user_id = ? " +
+        "WHERE user_sessions.hex_id = ? " +
         "ORDER BY " +
             "threads_users.pinned DESC, threads_last_update.last_updated DESC, " +
             "threads_users.thread_id, messages_limited.datetime_sent DESC";
 
-    connection.select(query, [data.user_id], function(statusCode, statusMessage, results) {
+    connection.select(query, [req.session_id], function(statusCode, statusMessage, results) {
         // Process results into an organized object
-        let chatProfile = app.createThreadProfile(data.user_id, results);
+        let chatProfile = app.createThreadProfile(req.user_id, results);
 
         res.writeHead(statusCode, statusMessage, {
             "Content-Type": "application/json"
@@ -129,37 +136,75 @@ route.register("/seen", function(req, res) {
 });
 
 http.createServer(function (req, res) {
-    let pathName = url.parse(req.url).pathname;
+    if (req.method.toUpperCase() === "GET") {
+        req.pathname = url.parse(req.url).pathname;
+        req.data = url.parse(req.url, true).query;
+        httpRequestRouteHandler(req, res)
+    } else if (req.method.toUpperCase() === "POST") {
+        let reqData = "";
+
+        req.on("data", function (data) {
+            reqData += data;
+            if (req.data > 4e7) {
+                res.setHeader("Content-Type", "text/html");
+                res.writeHead(413, "Payload too large");
+                res.end();
+            }
+        });
+
+        req.on("end", function (data) {
+            req.pathname = url.parse(req.url).pathname;
+            req.data = qs.parse(reqData);
+            httpRequestRouteHandler(req, res)
+        });
+    }
+}).listen(8080);
+
+function verifyUser(req, res, cb) {
+    if(req.headers["cookie"]) {
+        let cookieStr = req.headers["cookie"].replace(";", "&").replace(" ", "");
+        let cookieObj = qs.parse(cookieStr);
+
+        req.user_id = cookieObj.user_id;
+        req.session_id = cookieObj.session_id;
+
+        let query =
+            "SELECT user_sessions.ip, user_sessions.hex_id " +
+            "FROM user_sessions " +
+            "WHERE user_id = ? AND ip = ? AND hex_id = ?";
+
+        connection.select(query, [req.user_id, req.connection.remoteAddress, req.session_id], function(statusCode, statusMessage, results) {
+            cb(results.length > 0);
+        });
+    } else {
+        staticServer.serveFile(req, res, "index");
+    }
+}
+
+function httpRequestRouteHandler(req, res) {
+    let pathName = req.pathname;
     let pathHandler = route.pathHandlers[pathName];
 
     if(typeof pathHandler !== "undefined") {
         res.setHeader("Access-Control-Allow-Origin", "http://localhost:8080");
         res.setHeader("Access-Control-Allow-Credentials", "true");
 
-        if (req.method.toUpperCase() === "GET") {
-            pathHandler(req, res)
-        } else if (req.method.toUpperCase() === "POST") {
-            let reqData = '';
-
-            req.on("data", function(data) {
-                reqData += data;
-                if(req.data > 4e7) {
-                    res.setHeader("Content-Type", "text/html");
-                    res.writeHead(413, "Payload too large");
-                    res.end();
-                }
+        if(pathHandler.requireAuth === true) {
+            verifyUser(req, res, function(isVerified) {
+                if(isVerified)
+                    pathHandler(req, res);
+                else
+                    staticServer.serveFile(req, res, "index");
             });
-
-            req.on("end", function (data) {
-                req.data = qs.parse(reqData);
-                pathHandler(req, res);
-            });
+        } else {
+            pathHandler(req, res);
         }
     } else {
-        if(req.method.toUpperCase() === "GET") {
-            staticServer.serveFile(req, res, pathName.substr(1));
-        }
+        if(req.method.toUpperCase() === "GET")
+            staticServer.serveFile(req, res, pathName);
+        else
+            staticServer.serve404(req, res);
     }
-}).listen(8080);
+}
 
 console.log("Server listening");
