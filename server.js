@@ -136,28 +136,31 @@ route.register("/seen", function(req, res) {
 });
 
 http.createServer(function (req, res) {
-    if (req.method.toUpperCase() === "GET") {
+    let reqData = "";
+
+    req.on("error", function(err) {
+        console.log(err);
+    });
+
+    req.on("data", function (data) {
+        reqData += data;
+        if (req.data > 4e7) {
+            res.setHeader("Content-Type", "text/html");
+            res.writeHead(413, "Payload too large");
+            res.end();
+        }
+    });
+
+    req.on("end", function () {
         req.pathname = url.parse(req.url).pathname;
-        req.data = url.parse(req.url, true).query;
-        httpRequestRouteHandler(req, res)
-    } else if (req.method.toUpperCase() === "POST") {
-        let reqData = "";
 
-        req.on("data", function (data) {
-            reqData += data;
-            if (req.data > 4e7) {
-                res.setHeader("Content-Type", "text/html");
-                res.writeHead(413, "Payload too large");
-                res.end();
-            }
-        });
-
-        req.on("end", function (data) {
-            req.pathname = url.parse(req.url).pathname;
+        if(req.method.toUpperCase() === "GET")
+            req.data = url.parse(req.url, true).query;
+        else if(req.method.toUpperCase() === "POST")
             req.data = qs.parse(reqData);
-            httpRequestRouteHandler(req, res)
-        });
-    }
+
+        httpRequestRouteHandler(req, res);
+    });
 }).listen(8080);
 
 function verifyUser(req, res, cb) {
