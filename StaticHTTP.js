@@ -7,8 +7,8 @@ const glob = require("glob");
 /**
  * Serves a static file that is found in the public directory
  *
- * @param {ClientRequest} req - the request object
- * @param {ClientResponse} res - the response object
+ * @param {IncomingMessage} req - the request object
+ * @param {ServerResponse} res - the response object
  * @param {String} pathName - the pathname with or without the leading '/'
  */
 
@@ -22,6 +22,18 @@ StaticHTTP.serveFile = function(req, res, pathName) {
 
         if(pathNames.length === 0) {
             send404(req, res);
+        } else if(pathNames[0].charAt(pathNames[0].length - 1) === '/') {
+            fs.readFile(`${pathNames[0]}/index.html`, function (err, data) {
+                if(err)
+                    send404(req, res);
+                else {
+                    res.writeHead(200, "OK", {
+                        "Content-Type": "text/html"
+                    });
+                    res.write(data);
+                    res.end();
+                }
+            });
         } else {
             let contentType = getContentType(pathNames[0]);
             fs.readFile(pathNames[0], function (err, data) {
@@ -42,8 +54,8 @@ StaticHTTP.serveFile = function(req, res, pathName) {
 /**
  * Serves a 404
  *
- * @param {ClientRequest} req - the request object
- * @param {ClientResponse} res - the response object
+ * @param {IncomingMessage} req - the request object
+ * @param {ServerResponse} res - the response object
  */
 
 StaticHTTP.serve404 = function(req, res) {
