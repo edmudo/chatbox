@@ -10,7 +10,12 @@ const connection = new Database("./lib/creds.json");
 const route = new Route();
 const staticServer = require("./StaticHTTP");
 
-route.register("/chatbox");
+route.register("/", function(req, res) {
+    if(typeof req.session_id === "undefined")
+        staticServer.serveFile(req, res, "index");
+    else
+        staticServer.serveFile(req, res, "chatbox");
+});
 
 route.register("/login", {requireAuth: false}, function(req, res) {
     let data = req.data;
@@ -37,7 +42,7 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                            `user_id=${results[0].user_id}; expires=${expire}; path=/`,
                            `${sessionCookie}`
                        ],
-                       "x-chatbox-location": "http://localhost:8080/chatbox"
+                       "x-chatbox-location": "http://localhost:8080/"
                    });
                    res.end();
                });
@@ -51,7 +56,7 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                             `user_id=${results[0].user_id}; expires=${session.expire}; path=/`,
                             `session_id=${session.hex_id}; expires=${session.expire}; path=/`,
                         ],
-                        "x-chatbox-location": "http://localhost:8080/chatbox"
+                        "x-chatbox-location": "http://localhost:8080/"
                     });
                     res.end();
                 } else {
