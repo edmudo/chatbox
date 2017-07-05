@@ -12,7 +12,7 @@ function Route() {
  * @param {String} path - pathname resembling "/example"
  * @param {Object=} options - options for the callback
  * @param {boolean} options.requireAuth - requires a session to continue
- * @param {requestCallback=} cb - if specified, handle the response, otherwise attempt to serve file associated to path
+ * @param {responseCallback=} cb - if specified, handle the response, otherwise attempt to serve file associated to path
  */
 
 Route.prototype.register = function(path, options = {}, cb) {
@@ -41,3 +41,10 @@ Route.prototype.register = function(path, options = {}, cb) {
         console.log("Could not create route: " + path);
     }
 };
+
+/**
+ * Handle the response
+ * @callback responseCallback
+ * @param {IncomingMessage} req - the request object
+ * @param {ServerResponse} res - the response object
+ */
