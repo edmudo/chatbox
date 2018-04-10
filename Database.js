@@ -76,6 +76,20 @@ Database.prototype.update = function(q, values, cb) {
     });
 };
 
+// Database.prototype.transaction = function (q, arrValues, cb) {
+//     this.pool.getConnection(function(err, conn) {
+//        if(err)
+//            cb(503, "Connection failed.");
+//
+//        conn.beginTransaction(function(err) {
+//            if(err)
+//                cb(503, "Database error: " + err.message);
+//
+//            for()
+//        })
+//     });
+// };
+
 function cleanQuery(q) {
 
 }
