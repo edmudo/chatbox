@@ -22,18 +22,20 @@ route.register("/", function(req, res) {
 route.register("/login", {requireAuth: false}, function(req, res) {
     let data = req.data;
 
+    // verify the password to the hashed one in db
     let query = "SELECT users.password " +
         "FROM users " +
         "LEFT JOIN user_emails ON users.user_id = user_emails.user_id " +
         "WHERE user_emails.email = ?";
 
     connection.select(query, [data.email], function(statusCode, statusMessage, results) {
-        console.log(results);
         if (statusCode == 200 && results.length > 0) {
             app.comparePassword(data.password, results[0].password, function(compResult) {
                 if (!compResult)
+                    // TODO: notify client of failed login
                     return;
 
+                // gather other user information
                 query =
                     "SELECT " +
                         "users.user_id, user_emails.email, users.password, users.first_name, users.last_name, " +
@@ -44,14 +46,14 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                     "WHERE user_emails.email = ? AND users.password = ?";
             
                 connection.select(query, [data.email, results[0].password], function(statusCode, statusMessage, results) {
-                    console.log(results);
                     if(results.length > 0) {
                         if (results[0].hex_id === null) {
                             app.generateSessionCookie(function(sessionId, expire, sessionCookie) {
-                                console.log(sessionId);
+                                // create a session for the user
                                 query = "INSERT INTO user_sessions (user_id, ip, hex_id, expire) VALUES (?, ?, ?, ?)";
                                 connection.update(query, [results[0].user_id, req.connection.remoteAddress, sessionId, expire]);
                 
+                                // redirect client to chat area
                                 res.writeHead(200, statusMessage, {
                                     "Content-Type": "text/html",
                                     "Set-Cookie": [
@@ -64,8 +66,9 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                             });
                         } else {
                             let session = app.findSession(results, req.connection.remoteAddress);
-            
+                            
                             if(session) {
+                                // attach to the existing session
                                 res.writeHead(200, statusMessage, {
                                     "Content-Type": "text/html",
                                     "Set-Cookie": [
@@ -80,6 +83,7 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                             }
                         }
                     } else {
+                        // TODO: failed to login
                         res.writeHead(statusCode, statusMessage, {
                             "Content-Type": "text/html"
                         });
@@ -95,31 +99,37 @@ route.register("/poll", function(req, res) {
     // TODO: Verify user
     let data = req.data;
     
+    // set the thread as active
     ph.addThread(data.thread_id);
+
+    // add the response to the thread
     ph.bindResToThread(res, data.thread_id);
-    ph.print();
 });
 
 route.register("/send", function(req, res) {
     let data = req.data;
+
+    // send a message to the thread
     let query = "INSERT INTO messages (thread_id, sender_user_id, message) VALUES (?, ?, ?)";
 
     connection.update(query, [data.thread_id, data.sender_user_id, data.msg], function(statusCode, statusMessage) {
         if (statusCode == 204) {
+            // grab relevant info for message (probably should accessing db for this)
             query = "SELECT users.first_name, users.last_name, messages.datetime_sent " +
                 "FROM messages " +
                 "LEFT JOIN users ON messages.sender_user_id = users.user_id " +
                 "WHERE messages.thread_id = ? " +
                 "ORDER BY messages.datetime_sent DESC";
             connection.select(query, [data.thread_id], function(statusCode, statusMessage, results) {
-                ph.print();
                 if (results.length > 0) {
+                    // send responses to all connected clients
                     let name = results[0].first_name + " " + results[0].last_name;
                     ph.send(data.thread_id, data.sender_user_id, name, data.msg, results[0].datetime_sent);
                 }
             });
         }
 
+        // TODO: notify client of successful send
         res.writeHead(statusCode, statusMessage, {
             "Content-Type": "text/html"
         });
@@ -128,7 +138,7 @@ route.register("/send", function(req, res) {
 });
 
 route.register("/pull_threads", function(req, res) {
-    // Selects 20 entries of each thread relevant to the user
+    // Selects 20 entries from each thread relevant to the user
     let query =
         "SELECT " +
             "threads_users.pinned, threads_users.thread_id, threads.is_group, threads.thread_name, " +
@@ -174,6 +184,7 @@ route.register("/pull_threads", function(req, res) {
 route.register("/pull", function(req, res) {
     let data = req.data;
     
+    // pull older messages from db
     let query = 
         "SELECT messages.thread_id, messages.sender_user_id, messages.message, messages.datetime_sent " +
         "FROM messages " +
@@ -205,9 +216,8 @@ route.register("/create_account", {requireAuth: false}, function(req, res) {
             if (statusCode == 204) {
                 query = "INSERT INTO user_emails (user_id, email, verification_id, verified) VALUES(?, ?, ?, ?)";
                 app.generateVerificationLink(function(link) {
-                    console.log(link);
                     connection.update(query, [results.insertId, data.email, link, 0], function(statusCode, statusMessage, results) {
-                        console.log(statusCode+statusMessage);
+                        // TODO: send email to user to verify
                     });
                     staticServer.serveFile(req, res, "success");
                 });
@@ -219,14 +229,15 @@ route.register("/create_account", {requireAuth: false}, function(req, res) {
 route.register("/verify_email", {requireAuth: false}, function(req, res) {
     let data = req.data;
 
+    // ensure email exists
     let query = "SELECT user_emails.email, user_emails.verification_id " +
         "FROM user_emails " + 
         "WHERE user_emails.user_id = ? AND user_emails.email = ? AND user_emails.verification_id = ?";
 
+    // verify the email
     connection.select(query, [data.user_id, data.email, data.verification_id], function(statusCode, statusMessage, results) {
         if (results.length > 0) {
-            query = "UPDATE user_emails " + 
-                "SET user_emails.verified=1 " +
+            query = "UPDATE user_emails SET user_emails.verified=1 " +
                 "WHERE user_emails.user_id = ? AND user_emails.email = ?";
             connection.update(query, [data.user_id, data.email], function(statusCode, statusMessage, results) {
                 if (statusCode == 204) {

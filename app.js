@@ -62,11 +62,6 @@ app.createThreadProfile = function(userId, results) {
             relevantThread = chatProfile.threads[threadIndex];
 
         // Sets up the thread name
-        // if(isGroupThread === 0 && result.sender_user_id !== parseInt(userId)) {
-        //     relevantThread.thread_name = senderName;
-        // } else 
-        // if(isGroupThread === 1
-        //     && 
         if (result.sender_user_id !== parseInt(userId)
             && typeof relevantThread.participants[result.sender_user_id.toString()] === "undefined") {
 
