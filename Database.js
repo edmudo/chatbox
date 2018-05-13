@@ -11,6 +11,7 @@ function Database(credPath) {
         user: this.creds.user,
         password: this.creds.password,
         database: this.creds.database,
+        supportBigNumbers: true,
         debug: false
     });
 }
@@ -37,8 +38,10 @@ Database.prototype.select = function(q, values, cb) {
     }
 
     this.pool.getConnection(function(err, conn) {
-        if(err)
+        if(err) {
             cb(503, "Connection failed.");
+            return;
+        }
 
         conn.query(q, values, function(err, results) {
             conn.release();
@@ -61,34 +64,22 @@ Database.prototype.select = function(q, values, cb) {
 
 Database.prototype.update = function(q, values, cb) {
     this.pool.getConnection(function(err, conn) {
-        if(err)
+        if(err) {
             cb(503, "Connection failed.");
-
-        conn.query(q, values, function(err) {
+            return;
+        }
+        
+        conn.query(q, values, function(err, results) {
             conn.release();
             if(typeof cb === "function") {
                 if (err)
                     cb(503, "Database error: " + err.message);
                 else
-                    cb(204, "SUCCESS");
+                    cb(204, "SUCCESS", results);
             }
         });
     });
 };
-
-// Database.prototype.transaction = function (q, arrValues, cb) {
-//     this.pool.getConnection(function(err, conn) {
-//        if(err)
-//            cb(503, "Connection failed.");
-//
-//        conn.beginTransaction(function(err) {
-//            if(err)
-//                cb(503, "Database error: " + err.message);
-//
-//            for()
-//        })
-//     });
-// };
 
 function cleanQuery(q) {
 

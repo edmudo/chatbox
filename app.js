@@ -1,5 +1,6 @@
 const app = exports;
 
+const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const qs = require("querystring");
 
@@ -31,6 +32,8 @@ app.createThreadProfile = function(userId, results) {
     chatProfile.threads = [];
     chatProfile.thread_id_indices = {};
 
+    // parses through each message and relevant information to build up a
+    // chat/thread profile
     for(let result of results) {
         let threadId = result.thread_id,
             strThreadId = threadId.toString(),
@@ -53,21 +56,18 @@ app.createThreadProfile = function(userId, results) {
         }
 
         // Thread message format
-        let threadMessage = {
-            "sender_user_id": result.sender_user_id,
-            "sender_name": senderName,
-            "message": result.message,
-            "datetime_sent": result.datetime_sent
-        };
+        let threadMessage = app.messageFormat(result.sender_user_id, senderName, result.message, result.datetime_sent);
 
         let threadIndex = chatProfile.thread_id_indices[strThreadId],
             relevantThread = chatProfile.threads[threadIndex];
 
         // Sets up the thread name
-        if(isGroupThread === 0 && result.sender_user_id !== parseInt(userId)) {
-            relevantThread.thread_name = senderName;
-        } else if(isGroupThread === 1
-            && result.sender_user_id !== parseInt(userId)
+        // if(isGroupThread === 0 && result.sender_user_id !== parseInt(userId)) {
+        //     relevantThread.thread_name = senderName;
+        // } else 
+        // if(isGroupThread === 1
+        //     && 
+        if (result.sender_user_id !== parseInt(userId)
             && typeof relevantThread.participants[result.sender_user_id.toString()] === "undefined") {
 
             if(relevantThread.thread_name.length === 0)
@@ -83,3 +83,30 @@ app.createThreadProfile = function(userId, results) {
 
     return chatProfile;
 };
+
+app.messageFormat = function(suid, name, message, datetimeSent) {
+    return {
+        "sender_user_id": suid,
+        "sender_name": name,
+        "message": message,
+        "datetime_sent": datetimeSent
+    };
+}
+
+app.hashPassword = function(password, cb) {
+    bcrypt.hash(password, 10, function(err, hash) {
+        cb(hash);
+    });
+};
+
+app.comparePassword = function(password, hash, cb) {
+    bcrypt.compare(password, hash, function(err, result) {
+        cb(result)
+    });
+}
+
+app.generateVerificationLink = function(cb) {
+    crypto.randomBytes(16, function(err, buf) {
+        cb(buf.toString("hex"));
+    });
+}

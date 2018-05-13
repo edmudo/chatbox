@@ -13,13 +13,26 @@
             <h1>ChatBox</h1>
             <p>The only online chat client that you will ever need!</p>
         </div>
-        <div id="main-login">
+        <div id="main-login" class="modal">
             <form id="login-form" method="post">
                 <div id="login-form-items">
                     <input class="login-form-item" name="email" type="email" placeholder="Email">
                     <input class="login-form-item" name="password" type="password" placeholder="Password">
                     <p id="failed-login-message" class="login-form-item">Invalid username or password.</p>
                     <button class="login-form-item" name="submit" type="submit" form="login-form" value="Login">Login</button>
+                    <a href="">Forgot password?</a>
+                </div>
+            </form>
+        </div>
+        <div id="signup" class="modal">
+            <form id="signup-form" action="/create_account" method="post">
+                <div id="signup-form-items">
+                    <input class="form-item" name="first_name" type="text" placeholder="First name">
+                    <input class="form-item" name="last_name" type="text" placeholder="Last name">
+                    <input class="form-item" name="email" type="email" placeholder="Email">
+                    <input class="form-item" name="password" type="password" placeholder="Password">
+                    <input class="form-item" name="c_password" type="password" placeholder="Confirm password">
+                    <button class="form-item" name="submit" type="submit" form="signup-form" value="SignUp">Sign up</button>
                 </div>
             </form>
         </div>

@@ -2,65 +2,88 @@ var chatClient = {}
 
 $(document).ready(
     function () {
-        setupPage();
-
+        setup();
         setupChatbox();
         setupOptionsMenu();
     }
 );
 
-function setupPage() {
-    // TODO: Get user id from successful login
-
+function setup() {
     $.ajax(
         {
             method: "GET",                      // Temporary GET, switch to POST
-            url: "http://localhost:8080/pull",
+            url: "http://localhost:8080/pull_threads",
             xhrFields: {
                 withCredentials: true
             },
-            data: {user_id: 1}
+            data: {user_id: getCookie("user_id")}
         }
     )
         .done(function(data, textStatus, xhr) {
             console.log("Received response: " + xhr.statusText);
+            console.log(data);
             chatClient.chatProfile = data;
-            fillPage(data);
+            setupChat(data);
             setupChatEventHandlers();
         });
 }
 
-function fillPage(chatProfile) {
-    for(var i = 0; i < chatProfile.threads.length; i++) {
+function setupChat(chatProfile) {
+    for (var i = 0; i < chatProfile.threads.length; i++) {
         var thread = chatProfile.threads[i];
 
-        // format data
-        var avatarURL = "https://qph.ec.quoracdn.net/main-thumb-422971-50-2rW6VfaPKyuCl1ZzHXrCcHwZu2z36PdT.jpeg",
-            tempStr = thread.thread_messages[0].message,
-            preview = tempStr.substr(0, 27) + "...",
-            currDate = new Date(),
-            date = new Date(thread.thread_messages[0].datetime_sent * 1000),
-            dateStr = "";
-
-        if(currDate.getFullYear() === date.getFullYear())
-            dateStr = (date.getMonth() + 1) + "/" + date.getDate();
-        else
-            dateStr = (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear();
-
-        var $chatTemplate = $($("#chat-template").html());
-        $chatTemplate.attr("data-thread-id", thread.thread_id);
-        $chatTemplate.find(".avatar img").attr("src", avatarURL);// link to submitted avatar
-        $chatTemplate.find(".chat-pane-name").html(thread.thread_name);
-        $chatTemplate.find(".chat-pane-preview-message").html(preview);
-        $chatTemplate.find(".chat-pane-preview-date").html(dateStr);
-
-        $("#chats").append($chatTemplate);
+        poll(thread.thread_id);
+        addThread(thread);
     }
+}
+
+function poll(threadId) {
+    $.ajax(
+        {
+            method: "GET",
+            url: "http://localhost:8080/poll",
+            xhrFields: {
+                withCredentials: true
+            },
+            data: {thread_id: threadId},
+            timeout: 0
+        }
+    )
+        .done(function(data, textStatus, xhr) {
+            console.log("Long poll response: " + xhr.statusText);
+            poll(threadId);
+            console.log(data);
+        })
+}
+
+function addThread(thread) {
+    // format data
+    var avatarURL = "https://qph.ec.quoracdn.net/main-thumb-422971-50-2rW6VfaPKyuCl1ZzHXrCcHwZu2z36PdT.jpeg",
+        tempStr = thread.thread_messages[0].message,
+        preview = tempStr.substr(0, 27) + "...",
+        currDate = new Date(),
+        date = new Date(thread.thread_messages[0].datetime_sent * 1000),
+        dateStr = "";
+
+    if(currDate.getFullYear() === date.getFullYear())
+        dateStr = (date.getMonth() + 1) + "/" + date.getDate();
+    else
+        dateStr = (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear();
+
+    var $chatTemplate = $($("#chat-template").html());
+    $chatTemplate.attr("data-thread-id", thread.thread_id);
+    $chatTemplate.find(".avatar img").attr("src", avatarURL);// link to submitted avatar
+    $chatTemplate.find(".chat-pane-name").html(thread.thread_name);
+    $chatTemplate.find(".chat-pane-preview-message").html(preview);
+    $chatTemplate.find(".chat-pane-preview-date").html(dateStr);
+
+    $("#chats").append($chatTemplate);
 }
 
 function setupChatEventHandlers() {
     $(".chat").click(function(event) {
         displayChatThread(this);
+        chatClient.currThread = this.getAttribute("data-thread-id");
         $(".receiver, .sender").click(function(event) {
             displayTime(this);
         });
@@ -84,7 +107,7 @@ function displayChatThread(obj) {
     for(var i = thread.thread_messages.length - 1; i >= 0; i--) {
         // parse message data
         var messageContent = thread.thread_messages[i],
-            messageType = (messageContent.sender_user_id !== 1) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
+            messageType = (messageContent.sender_user_id != getCookie("user_id")) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
             messageDate = new Date(messageContent.datetime_sent * 1000),
             messageTimeHour = convertHourStandard(messageDate.getHours()),
             messageTimeMinute = padZero(messageDate.getMinutes()),
@@ -185,15 +208,11 @@ function sendMessage() {
             xhrFields: {
                 withCredentials: true
             },
-            data: {thread_id: 1, sender_user_id: 1, msg: pendingMessage}
+            data: {thread_id: chatClient.currThread, sender_user_id: getCookie("user_id"), msg: pendingMessage}
         }
     )
         .done(function(data, textStatus, jqxhr) {
             // TODO: notify/signal user that message was sent
-
-            console.log(data);
-            console.log(textStatus);
-            console.log(jqxhr.statusText);
             console.log("Received response: " + jqxhr.statusText);
         });
 }
@@ -212,4 +231,20 @@ function autoAdjustTextBox() {
         var textareaScrollHeight = chatClient.messageBox.prop("scrollHeight");
         chatClient.messageBox.css("height", (textareaScrollHeight - 10).toString() + "px");
     }
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
 }
