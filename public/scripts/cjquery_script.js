@@ -1,4 +1,8 @@
-var chatClient = {}
+var chatClient = {
+    currThread: -1,
+    prevThreadMsgDate: {},
+    chatProfile: {}
+}
 
 $(document).ready(
     function () {
@@ -11,7 +15,7 @@ $(document).ready(
 function setup() {
     $.ajax(
         {
-            method: "GET",                      // Temporary GET, switch to POST
+            method: "GET",
             url: "http://localhost:8080/pull_threads",
             xhrFields: {
                 withCredentials: true
@@ -87,7 +91,6 @@ function setupChatEventHandlers() {
     });
 
     $("#conversations").on("click", "div.message", function() {
-        console.log('clicked');
         displayTime(this);
     });
 }
@@ -100,33 +103,41 @@ function displayChatThread(obj) {
 
     var threadId = jQuery(obj).attr("data-thread-id"),
         threadIndex = chatClient.chatProfile.thread_id_indices[threadId.toString()],
-        thread = chatClient.chatProfile.threads[threadIndex],
-        prevDate = new Date(0);
+        thread = chatClient.chatProfile.threads[threadIndex];
 
-    // clear conversations before inserting new thread
+    chatClient.prevThreadMsgDate = new Date(0);
+
+    // clear conversations before displaying thread conversations
     $("#conversations").html("");
 
     for(var i = thread.thread_messages.length - 1; i >= 0; i--) {
-        // parse message data
-        var messageContent = thread.thread_messages[i],
-            messageType = (messageContent.sender_user_id != getCookie("user_id")) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
-            messageDate = new Date(messageContent.datetime_sent * 1000),
-            messageTimeHour = convertHourStandard(messageDate.getHours()),
-            messageTimeMinute = padZero(messageDate.getMinutes()),
-            messageTimePeriod = (messageDate.getHours() < 12) ? "AM" : "PM",
-            messageTimeStr = messageTimeHour + ":" + messageTimeMinute + " " +  messageTimePeriod;
-
-        // determine whether to display date before messages
-        if(messageDate.getDate() > prevDate.getDate()
-            || messageDate.getMonth() > prevDate.getMonth()
-            || messageDate.getFullYear() > prevDate.getFullYear()) {
-            displayTimeBreak(messageDate.toDateString());
-        }
-
-        displayMessage(messageType, messageContent.message, messageTimeStr);
-
-        prevDate = messageDate;
+        displayMessage(thread.thread_messages[i]);
     }
+}
+
+function displayMessage(msgObj) {
+    const MESSAGE_TYPE = {
+        "sender": "sender",
+        "receiver": "receiver"
+    };
+
+    var messageType = (msgObj.sender_user_id != getCookie("user_id")) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
+        messageDate = new Date(msgObj.datetime_sent * 1000),
+        messageTimeHour = convertHourStandard(messageDate.getHours()),
+        messageTimeMinute = padZero(messageDate.getMinutes()),
+        messageTimePeriod = (messageDate.getHours() < 12) ? "AM" : "PM",
+        messageTimeStr = messageTimeHour + ":" + messageTimeMinute + " " +  messageTimePeriod;
+
+    // determine whether to display date before messages
+    if (messageDate.getDate() > chatClient.prevThreadMsgDate.getDate()
+        || messageDate.getMonth() > chatClient.prevThreadMsgDate.getMonth()
+        || messageDate.getFullYear() > chatClient.prevThreadMsgDate.getFullYear()) {
+        displayTimeBreak(messageDate.toDateString());
+    }
+
+    appendMessage(messageType, msgObj.message, messageTimeStr);
+
+    chatClient.prevThreadMsgDate = messageDate;
 }
 
 function displayTimeBreak(dateStr) {
@@ -136,7 +147,7 @@ function displayTimeBreak(dateStr) {
     convoDOM.append($messageTimeTemplate);
 }
 
-function displayMessage(msgType, msg, msgTimeStr) {
+function appendMessage(msgType, msg, msgTimeStr) {
     var convoDOM = $("#conversations"),
         $messageTemplate = $($("#message-template").html());
 
