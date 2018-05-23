@@ -25,9 +25,8 @@ function setup() {
     )
         .done(function(data, textStatus, xhr) {
             console.log("Received response: " + xhr.statusText);
-            console.log(data);
             chatClient.chatProfile = data;
-            setupChat(data);
+            setupChat(chatClient.chatProfile);
             setupChatEventHandlers();
         });
 }
@@ -56,7 +55,7 @@ function poll(threadId) {
         .done(function(data, textStatus, xhr) {
             console.log("Long poll response: " + xhr.statusText);
             poll(threadId);
-            console.log(data);
+            displayMessage(JSON.parse(data));
         })
 }
 
@@ -121,7 +120,7 @@ function displayMessage(msgObj) {
         "receiver": "receiver"
     };
 
-    var messageType = (msgObj.sender_user_id != getCookie("user_id")) ? MESSAGE_TYPE.receiver : MESSAGE_TYPE.sender,
+    var messageType = (msgObj.sender_user_id == getCookie("user_id")) ? MESSAGE_TYPE.sender : MESSAGE_TYPE.receiver,
         messageDate = new Date(msgObj.datetime_sent * 1000),
         messageTimeHour = convertHourStandard(messageDate.getHours()),
         messageTimeMinute = padZero(messageDate.getMinutes()),
