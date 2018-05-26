@@ -89,7 +89,7 @@ function setupChatEventHandlers() {
         chatClient.currThread = this.getAttribute("data-thread-id");
     });
 
-    $("#conversations").on("click", "div.message", function() {
+    $("#chatbox").on("click", "div.message-wrapper", function() {
         displayTime(this);
     });
 }
@@ -107,7 +107,7 @@ function displayChatThread(obj) {
     chatClient.prevThreadMsgDate = new Date(0);
 
     // clear conversations before displaying thread conversations
-    $("#conversations").html("");
+    $("#chatbox").html("");
 
     for(var i = thread.thread_messages.length - 1; i >= 0; i--) {
         displayMessage(thread.thread_messages[i]);
@@ -140,25 +140,30 @@ function displayMessage(msgObj) {
 }
 
 function displayTimeBreak(dateStr) {
-    var convoDOM = $("#conversations"),
+    var convoDOM = $("#chatbox"),
         $messageTimeTemplate = $($("#message-time-template").html());
     $messageTimeTemplate.find(".message-time-date").html(dateStr);
     convoDOM.append($messageTimeTemplate);
 }
 
 function appendMessage(msgType, msg, msgTimeStr) {
-    var convoDOM = $("#conversations"),
-        $messageTemplate = $($("#message-template").html());
+    var convoDOM = $("#chatbox"),
+        $msgWrapperDiv = jQuery("<div/>", {
+            class: "message-wrapper " + msgType + "-wrapper",
+        }),
+        $msgGroupDiv = jQuery("<div/>"),
+        $msgDiv = jQuery("<div/>", {
+            class: "message " + msgType,
+            text: msg
+        }),
+        $msgDivTime = jQuery("<div/>", {
+            class: "time",
+            text: msgTimeStr
+        }),
+        $msgTemplate = $msgWrapperDiv.append(
+            $msgGroupDiv.append($msgDiv).append($msgDivTime));
 
-    // appends the message with event handler to show time when clicked
-    $messageTemplate.find(".message-type").attr("class", msgType);
-    $messageTemplate.find(".message-type-body").attr("class", msgType + "-body");
-    $messageTemplate.find(".message-content")
-        .attr("class", "message-content " + msgType + "-body-content")
-        .html(msg);
-    $messageTemplate.find(".time").html(msgTimeStr);
-
-    convoDOM.append($messageTemplate);
+    convoDOM.append($msgTemplate);
 }
 
 function convertHourStandard(hour) {

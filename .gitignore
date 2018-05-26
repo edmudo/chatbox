@@ -2,8 +2,10 @@
 .idea
 .tern-project
 
+*.swp
+
+tags
 node_modules/
 
 lib/*
 public/img/
-
