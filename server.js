@@ -44,7 +44,7 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                     "LEFT JOIN users ON user_emails.user_id = users.user_id " +
                     "LEFT JOIN user_sessions ON user_emails.user_id = user_sessions.user_id " +
                     "WHERE user_emails.email = ? AND users.password = ?";
-            
+
                 connection.select(query, [data.email, results[0].password], function(statusCode, statusMessage, results) {
                     if(results.length > 0) {
                         if (results[0].hex_id === null) {
@@ -52,7 +52,7 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                                 // create a session for the user
                                 query = "INSERT INTO user_sessions (user_id, ip, hex_id, expire) VALUES (?, ?, ?, ?)";
                                 connection.update(query, [results[0].user_id, req.connection.remoteAddress, sessionId, expire]);
-                
+
                                 // redirect client to chat area
                                 res.writeHead(200, statusMessage, {
                                     "Content-Type": "text/html",
@@ -66,7 +66,7 @@ route.register("/login", {requireAuth: false}, function(req, res) {
                             });
                         } else {
                             let session = app.findSession(results, req.connection.remoteAddress);
-                            
+
                             if(session) {
                                 // attach to the existing session
                                 res.writeHead(200, statusMessage, {
@@ -98,7 +98,7 @@ route.register("/login", {requireAuth: false}, function(req, res) {
 route.register("/poll", function(req, res) {
     // TODO: Verify user
     let data = req.data;
-    
+
     // set the thread as active
     ph.addThread(data.thread_id);
 
@@ -135,6 +135,10 @@ route.register("/send", function(req, res) {
         });
         res.end();
     });
+});
+
+route.register("/create_thread", function(req, res) {
+
 });
 
 route.register("/pull_threads", function(req, res) {
@@ -183,9 +187,9 @@ route.register("/pull_threads", function(req, res) {
 
 route.register("/pull", function(req, res) {
     let data = req.data;
-    
+
     // pull older messages from db
-    let query = 
+    let query =
         "SELECT messages.thread_id, messages.sender_user_id, messages.message, messages.datetime_sent " +
         "FROM messages " +
         "WHERE thread_id = ? AND datetime_sent >= ?" +
@@ -231,7 +235,7 @@ route.register("/verify_email", {requireAuth: false}, function(req, res) {
 
     // ensure email exists
     let query = "SELECT user_emails.email, user_emails.verification_id " +
-        "FROM user_emails " + 
+        "FROM user_emails " +
         "WHERE user_emails.user_id = ? AND user_emails.email = ? AND user_emails.verification_id = ?";
 
     // verify the email

@@ -6,6 +6,7 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100%;
+    width: 100%;
 }
 
 body {
@@ -13,7 +14,28 @@ body {
     flex-flow: row;
 }
 
-#left-bar-login, #left-bar-chat {
+.stripped-button {
+    background: none;
+    margin: 0 10px;
+    padding: 0;
+    border: none;
+    font-weight: bold;
+}
+
+.stripped-button:active {
+    color: blue;
+}
+
+[contenteditable="true"]:empty:before {
+    color: gray;
+    content: attr(data-text);
+}
+
+[contenteditable="true"]:focus {
+    outline: none;
+}
+
+#left-bar-login, #chatclient #left-bar {
     flex-flow: column;
 }
 
@@ -22,9 +44,10 @@ body {
     border-right: 1px solid black;
 }
 
-#left-bar-chat {
-    flex: 1 1 auto;
-    min-width: 300px;
+#chatclient #left-bar {
+    flex: 1;
+    padding: 0 5px;
+    min-width: 0;
 }
 
 /* Login styling */
@@ -70,38 +93,40 @@ input[type="email"].login-form-item, input[type="password"].login-form-item {
 
 /* Chat styling */
 
-#chat-manager {
+.main-layout > div:first-child {
+    padding: 15px 0;
+}
+
+#chat-finder {
     display: flex;
-    padding: 0 5px;
     flex-flow: row;
     align-items: center;
-    margin-bottom: 5px;
-    height: 50px;
 }
 
-#chat-manager-search {
-    flex: 1 1 auto;
-}
-
-#chat-manager-search input {
-    width: 90%;
-}
-
-#chat-manager-options {
-    line-height: 0;
-}
-
-#chats {
+#chat-finder-search {
     width: 100%;
+    outline: none;
+    padding: 5px;
+    border: 1px solid gray;
 }
 
-.chat {
+#chat-finder-options {
+    line-height: 0;
+    width: max-content;
+}
+
+.chatroom {
     display: flex;
-    padding: 0 5px 0 0;
     flex-flow: row;
+    padding: 10px 0;
+    border-bottom: 1px solid gray;
 }
 
-.chat:hover {
+.chatroom:last-child {
+    border-bottom: none;
+}
+
+.chatroom:hover {
     background-color: rgba(240,240,240);
 }
 
@@ -111,41 +136,50 @@ input[type="email"].login-form-item, input[type="password"].login-form-item {
     margin-right: 10px;
 }
 
+.avatar img {
+    border-radius: 100px;
+}
+
 .chat-pane {
-    flex: 1 1 auto;
+    width: 100%;
+    height: 50px;
     display: flex;
     flex-flow: column;
+    justify-content: center;
+    min-width: 0;
 }
 
 .chat-pane-info {
-    flex: 1 1 auto;
     display: flex;
     flex-flow: row;
     justify-content: space-between;
-    padding-top: 5px;
 }
 
 .chat-pane-options {
     line-height: 0;
+    min-width: max-content;
 }
 
 .chat-pane-name {
-    align-self: flex-start;
     font-weight: bold;
-    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .chat-pane-preview {
-    flex: 2 1 auto;
     display: flex;
     flex-flow: row;
     justify-content: space-between;
     align-items: center;
+    font-size: 0.8em;
 }
 
 .chat-pane-preview-message {
-    font-size: 14px;
-    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-right: 5px;
 }
 
 .chat-pane-preview-date {
@@ -155,63 +189,80 @@ input[type="email"].login-form-item, input[type="password"].login-form-item {
 }
 
 #main-chat {
-    flex: 2 1 auto;
+    flex: 2;
     flex-flow: column;
     display: flex;
     border-left: 1px solid gray;
     padding: 0 1.0em;
 }
 
-#info-bar {
-    flex: 1 1 auto;
+#recipient-info-bar {
+    flex: 1 0 auto;
     display: flex;
     flex-flow: row;
     justify-content: space-between;
     align-items: center;
 }
 
-#selected-user {
+#recipient {
     display: inline-flex;
 }
 
-#selected-user-username {
+#recipient-username {
     font-size: 20px;
     font-weight: bold;
     align-self: flex-end;
 }
 
-#selected-user img {
-    margin-left: 10px;
+#recipient-activity {
+    height: 10px;
+    width: 10px;
+    display: inline-block;
+    border-radius: 50%;
+    margin-left: 7px;
     align-self: center;
 }
 
-#user-options {
-    padding-right: 10px;
+#recipient-activity[data-active="true"] {
+    background-color: green;
 }
 
-#user-options ul {
-    text-align: left;
+#recipient-activity[data-active="false"] {
+    background-color: red;
+}
+
+.relative-container {
+    position: relative;
+}
+
+ul.menu {
+    display: none;
     list-style: none;
-    position: absolute;
     padding: 10px 0;
-    top: 25px;
-    right: 10px;
+    position: absolute;
     border: 1px solid gray;
     border-radius: 5px;
-    display: none;
     background-color: white;
 }
 
-#user-options ul .menu-item {
+.menu-below-15 {
+    top: 15px;
+}
+
+.menu-right-0 {
+    right: 0;
+}
+
+li.menu-item {
     font-size: 14px;
     padding: 5px 80px 5px 10px;
 }
 
-#user-options ul .menu-item:hover {
+li.menu-item:hover {
     text-decoration: underline;
 }
 
-#user-options ul .menu-break {
+li.menu-break {
     padding: 0 10px;
 }
 
@@ -220,7 +271,16 @@ input[type="email"].login-form-item, input[type="password"].login-form-item {
     height: 100vh;
     display: flex;
     flex-flow: column;
-    overflow: scroll;
+    overflow: auto;
+}
+
+.placeholder-text {
+    color: gray;
+    text-align: center;
+}
+
+#chatbox .placeholder-text {
+    margin: auto 0;
 }
 
 .message-wrapper {
@@ -255,10 +315,6 @@ input[type="email"].login-form-item, input[type="password"].login-form-item {
     color: white;
 }
 
-#message-box {
-    flex: 1 1 auto;
-}
-
 .time {
     display: none;
     font-size: 0.65em;
@@ -274,16 +330,23 @@ input[type="email"].login-form-item, input[type="password"].login-form-item {
 }
 
 #message-box {
-    text-align: center;
+    flex: 1 0 auto;
+    display: flex;
+    flex-wrap: nowrap;
+    border-top: 1px solid gray;
+    padding: 1.0em 0.5em;
 }
 
-#pending-message {
+#message-box-text {
+    flex: 1 1 auto;
     display: inline-block;
-    resize: none;
-    font-size: 14px;
-    max-height: 61px;
-    height: 1px;
-    width: 400px;
-    padding: 5px;
-    overflow: hidden;
+    max-height: 30vh;
+    word-break: break-word;
+    overflow-y: auto;
 }
+
+#send {
+    width: max-content;
+    flex: 0 0 auto;
+}
+

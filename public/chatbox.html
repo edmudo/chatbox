@@ -8,91 +8,54 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="scripts/cjquery_script.js"></script>
     </head>
-    <body>
-        <div id="left-bar-chat">
-            <div id="chat-manager" class="left-bar-item">
-                <div id="chat-manager-search" class="chat-manager-item">
-                    <input type="text" placeholder="Search...">
-                </div>
-                <div id="chat-manager-options" class="chat-manager-item">
-                    <input type="image" src="http://placehold.it/20x20">    <!-- Add contact -->
-                    <input type="image" src="http://placehold.it/20x20">    <!-- Set Status -->
-                </div>
+    <body id="chatclient">
+        <div id="left-bar" class="main-layout">
+            <div id="chat-finder" class="left-bar-item">
+                <input id="chat-finder-search" class="chat-finder-item" type="text" placeholder="Search...">
             </div>
-
-            <script id="chat-template" type="text/html">
-                <div class="chat">
+            <template id="chatroom-template">
+                <div class="chatroom">
                     <div class="avatar">
                         <img src="http://placehold.it/50x50">
                     </div>
                     <div class="chat-pane">
                         <div class="chat-pane-info">
-                            <p class="chat-pane-name"></p>
+                            <div class="chat-pane-name"></div>
                             <div class="chat-pane-options">
                                 <input type="image" src="img/rsz_pin-icon.png">
                                 <input type="image" src="img/rsz_recyclebin.png">
                             </div>
                         </div>
                         <div class="chat-pane-preview">
-                            <p class="chat-pane-preview-message"></p>
-                            <p class="chat-pane-preview-date"></p>
+                            <span class="chat-pane-preview-message"></span>
+                            <span class="chat-pane-preview-date"></span>
                         </div>
                     </div>
                 </div>
-            </script>
-
-            <div id="chats" class="left-bar-item"></div>
+            </template>
+            <div id="chatrooms" class="left-bar-item"></div>
         </div>
-        <div id="main-chat">
-            <div id="info-bar">
-                <div id="selected-user">
-                    <p id="selected-user-username">MyName</p>
-                    <img alt="active" src="http://placehold.it/15x15">
+        <div id="main-chat" class="main-layout">
+            <div id="recipient-info-bar">
+                <div id="recipient">
+                    <span id="recipient-username">MyName</span>
+                    <span id="recipient-activity" data-active="true"></span>
                 </div>
-                <div id="user-options">
-                    <input type="image" src="http://www.ironplanet.com/images/icons/gearicon_inactive.png">
-                    <ul>
+                <div id="user-options" class="relative-container contains-hidden">
+                    <input class="toggle" type="image" src="http://www.ironplanet.com/images/icons/gearicon_inactive.png">
+                    <ul class="hidden-item menu menu-below-15 menu-right-0">
                         <li class="menu-item">Profile</li>
                         <li class="menu-break"><hr></li>
                         <li class="menu-item">Logout</li>
                     </ul>
                 </div>
             </div>
-            
-            <!-- Remains hidden when chat selected -->
-<!--
-            <div id="chat-placeholder">
-                <img alt="chatbox" src="placehold.it/200x200">
-                <p class="placeholder-text">Select a conversation...</p>
-            </div>
--->
-
             <div id="chatbox">
-                <div class="message-wrapper receiver-wrapper">
-                    <div>
-                        <div class="message receiver">
-                            This is my message...
-                        </div>
-                        <div class="time">9:56pm</div>
-                    </div>
-                </div>
-                <div class="message-wrapper sender-wrapper">
-                    <div>
-                        <div class="message sender">
-                            This is my message... Lorem ipsum dolor...
-                        </div>
-                        <div class="time">9:56pm</div>
-                    </div>
-                </div>
+                <div class="placeholder-text">Select a conversation...</div>
             </div>
             <div id="message-box">
-                <textarea id="pending-message" placeholder="Send a message..." onkeyup="autoAdjustTextBox()"></textarea>
-                <script>
-                    chatClient.messageBox = $("#pending-message");
-                    chatClient.charHeight = chatClient.messageBox.prop("scrollHeight") - 10;  // -10 to account for padding
-                    chatClient.messageBox.css("height", chatClient.charHeight.toString() + "px");
-                </script>
-                <button id="send" onclick="sendMessage()">Send</button>
+                <div id="message-box-text" contenteditable="true" data-text="Say something..."></div>
+                <button id="send" class="stripped-button" onclick="sendMessage()">Send</button>
             </div>
         </div>
     </body>

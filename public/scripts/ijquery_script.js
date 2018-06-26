@@ -50,5 +50,5 @@ function sendSignup() {
             } else {
                 window.location.replace(jqxhr.getResponseHeader("x-chatbox-location"));
             }
-        })
+        });
 }

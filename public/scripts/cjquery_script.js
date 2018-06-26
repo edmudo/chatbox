@@ -8,7 +8,13 @@ $(document).ready(
     function () {
         setup();
         setupChatbox();
-        setupOptionsMenu();
+        setupMenuToggle();
+
+        $("#message-box-text").focusout(function() {
+            if ($("#message-box-text").text().trim() == "") {
+                $("#message-box-text").empty();
+            }
+        });
     }
 );
 
@@ -56,14 +62,14 @@ function poll(threadId) {
             console.log("Long poll response: " + xhr.statusText);
             poll(threadId);
             displayMessage(JSON.parse(data));
+            $("#chatbox").scrollTop($("#chatbox")[0].scrollHeight - $("#chatbox")[0].clientHeight);
         })
 }
 
 function addThread(thread) {
     // format data
     var avatarURL = "https://qph.ec.quoracdn.net/main-thumb-422971-50-2rW6VfaPKyuCl1ZzHXrCcHwZu2z36PdT.jpeg",
-        tempStr = thread.thread_messages[0].message,
-        preview = tempStr.substr(0, 27) + "...",
+        preview = thread.thread_messages[0].message,
         currDate = new Date(),
         date = new Date(thread.thread_messages[0].datetime_sent * 1000),
         dateStr = "";
@@ -73,14 +79,14 @@ function addThread(thread) {
     else
         dateStr = (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear();
 
-    var $chatTemplate = $($("#chat-template").html());
+    var $chatTemplate = $($("#chatroom-template").html());
     $chatTemplate.attr("data-thread-id", thread.thread_id);
     $chatTemplate.find(".avatar img").attr("src", avatarURL);// link to submitted avatar
     $chatTemplate.find(".chat-pane-name").html(thread.thread_name);
     $chatTemplate.find(".chat-pane-preview-message").html(preview);
     $chatTemplate.find(".chat-pane-preview-date").html(dateStr);
 
-    $("#chats").append($chatTemplate);
+    $("#chatrooms").append($chatTemplate);
 }
 
 function setupChatEventHandlers() {
@@ -186,40 +192,37 @@ function displayTime(obj) {
     jQuery(obj).find(".time").toggle();
 }
 
-function setupOptionsMenu() {
-    var $userOptions = $("#user-options");
-    var $userOptionsMenu = $userOptions.find("ul");
+function setupMenuToggle() {
+    var $container = $(".contains-hidden");
+    var $hiddenItem = $container.find(".hidden-item");
 
-    $userOptions.find("input").click(
+    $container.find(".toggle").click(
         function (event) {
-            $userOptionsMenu.toggle();
+            $hiddenItem.toggle();
             event.stopPropagation();
         }
     );
 
     $("body").click(
         function () {
-            if($userOptionsMenu.css("display") !== "none") {
-                $userOptionsMenu.toggle();
+            if($hiddenItem.css("display") !== "none") {
+                $hiddenItem.toggle();
             }
         }
     );
 }
 
 function setupChatbox() {
-    var $pendingMessage = $("#pending-message");
+    var $pendingMessage = $("#message-box-text");
 
     $pendingMessage.on("keydown", function (event) {
         var keyID = event.keyCode;
         switch (keyID) {
-            case 8:
-                autoAdjustTextBox();
-                break;
             case 13:
-                sendMessage();
-                break;
-            case 46:
-                autoAdjustTextBox();
+                if (!event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage();
+                }
                 break;
             default:
                 break;
@@ -228,7 +231,10 @@ function setupChatbox() {
 }
 
 function sendMessage() {
-    var pendingMessage = $("#pending-message").val();
+    var pendingMessage = $("#message-box-text").text();
+
+    if (chatClient.currThread < 0 || pendingMessage.trim() == "")
+        return;
 
     $.ajax(
         {
@@ -242,24 +248,9 @@ function sendMessage() {
     )
         .done(function(data, textStatus, jqxhr) {
             // TODO: notify/signal user that message was sent
+            $("#message-box-text").empty();
             console.log("Received response: " + jqxhr.statusText);
         });
-}
-
-function autoAdjustTextBox() {
-    // Assumes that the padding is 5px
-    if(chatClient.messageBox.prop("clientHeight") >= chatClient.charHeight * 3 + 10) {
-        chatClient.messageBox.css("overflow", "scroll");
-    } else {
-        chatClient.messageBox.css("overflow", "hidden");
-
-        // Clears the style
-        chatClient.messageBox.css("height","1px");
-
-        // Gets the height of content without css height influence
-        var textareaScrollHeight = chatClient.messageBox.prop("scrollHeight");
-        chatClient.messageBox.css("height", (textareaScrollHeight - 10).toString() + "px");
-    }
 }
 
 function getCookie(cname) {
