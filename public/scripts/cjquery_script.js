@@ -90,7 +90,7 @@ function addThread(thread) {
 }
 
 function setupChatEventHandlers() {
-    $("#chats").on("click", "div.chat", function() {
+    $("#chatrooms").on("click", "div.chatroom", function() {
         displayChatThread(this);
         chatClient.currThread = this.getAttribute("data-thread-id");
     });
